@@ -6,6 +6,43 @@
 let currentUser = null;
 let currentUserData = null;
 let userRoles = [];
+let isTestMode = false;
+let testActiveRole = null;
+
+// ============================================================================
+// TEST MODE FUNCTIONS
+// ============================================================================
+
+function checkTestMode() {
+    isTestMode = localStorage.getItem('ppg_test_mode') === 'true';
+    if (isTestMode) {
+        const testUser = localStorage.getItem('ppg_test_user');
+        testActiveRole = localStorage.getItem('ppg_test_role');
+        if (testUser) {
+            currentUserData = JSON.parse(testUser);
+        }
+    }
+    return isTestMode;
+}
+
+async function loadTestModeData() {
+    if (!isTestMode || !currentUserData) return;
+    
+    // Get user roles
+    const { data: rolesData, error: rolesError } = await db
+        .from('user_role')
+        .select(`
+            *,
+            role:role_id(kode, nama, level),
+            wilayah:wilayah_id(kode, nama, tingkat)
+        `)
+        .eq('user_id', currentUserData.id)
+        .eq('is_aktif', true);
+    
+    if (!rolesError) {
+        userRoles = rolesData || [];
+    }
+}
 
 // ============================================================================
 // AUTH FUNCTIONS
@@ -20,6 +57,12 @@ async function login(email, password) {
         });
         
         if (error) throw error;
+        
+        // Clear test mode
+        localStorage.removeItem('ppg_test_mode');
+        localStorage.removeItem('ppg_test_user');
+        localStorage.removeItem('ppg_test_role');
+        isTestMode = false;
         
         currentUser = data.user;
         await loadUserData();
@@ -56,6 +99,13 @@ async function register(email, password, nama) {
 // Logout
 async function logout() {
     try {
+        // Clear test mode
+        localStorage.removeItem('ppg_test_mode');
+        localStorage.removeItem('ppg_test_user');
+        localStorage.removeItem('ppg_test_role');
+        isTestMode = false;
+        testActiveRole = null;
+        
         await db.auth.signOut();
         currentUser = null;
         currentUserData = null;
@@ -63,12 +113,19 @@ async function logout() {
         window.location.href = 'index.html';
     } catch (error) {
         console.error('Logout error:', error);
+        window.location.href = 'index.html';
     }
 }
 
 // Cek session aktif
 async function checkSession() {
     try {
+        // Check test mode first
+        if (checkTestMode()) {
+            await loadTestModeData();
+            return true;
+        }
+        
         const { data: { session } } = await db.auth.getSession();
         
         if (session) {
@@ -143,6 +200,11 @@ function getUserWilayahIds() {
     return userRoles
         .filter(ur => ur.wilayah_id)
         .map(ur => ur.wilayah_id);
+}
+
+// Get active role in test mode
+function getActiveTestRole() {
+    return testActiveRole;
 }
 
 // ============================================================================

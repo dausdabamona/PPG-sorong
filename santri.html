@@ -72,7 +72,7 @@
                         <div class="breadcrumb"><a href="dashboard.html">Dashboard</a><span>/</span><span>Data Santri</span></div>
                         <h2 class="page-title">Daftar Santri</h2>
                     </div>
-                    <button class="btn btn-primary" onclick="showAddModal()">➕ Tambah Santri</button>
+                    <button class="btn btn-primary" id="btnTambah" onclick="showAddModal()" style="display:none;">➕ Tambah Santri</button>
                 </div>
                 
                 <!-- Filters: Status → Daerah → Kelompok → Jenjang -->
@@ -88,6 +88,9 @@
                                 <select class="form-control" id="filterStatus" onchange="loadSantri()">
                                     <option value="aktif">Aktif</option>
                                     <option value="nonaktif">Nonaktif</option>
+                                    <option value="lulus">Lulus</option>
+                                    <option value="pindah">Pindah</option>
+                                    <option value="menikah">Menikah</option>
                                     <option value="">Semua</option>
                                 </select>
                             </div>
@@ -219,6 +222,9 @@
                             <select class="form-control" name="status" id="formStatus">
                                 <option value="aktif">Aktif</option>
                                 <option value="nonaktif">Nonaktif</option>
+                                <option value="lulus">Lulus</option>
+                                <option value="pindah">Pindah</option>
+                                <option value="menikah">Menikah</option>
                             </select>
                         </div>
                     </div>
@@ -255,7 +261,14 @@
             updateUserUI();
             await loadFilters();
             await loadSantri();
-            if (getUrlParam('action') === 'add') showAddModal();
+            
+            // Show tambah button only for admin/mubaligh
+            const canEdit = userRoles.some(r => ['admin', 'mubaligh'].includes(r.role?.kode));
+            if (canEdit) {
+                $('btnTambah').style.display = 'block';
+            }
+            
+            if (getUrlParam('action') === 'add' && canEdit) showAddModal();
         });
         
         function updateUserUI() {
@@ -441,8 +454,28 @@
                 return;
             }
             
+            // Check user roles
+            const isAdmin = userRoles.some(r => r.role?.kode === 'admin');
+            const isMubaligh = userRoles.some(r => r.role?.kode === 'mubaligh');
+            const canEdit = isAdmin || isMubaligh;
+            const canDelete = isAdmin; // Hanya admin yang bisa hapus
+            
             tbody.innerHTML = data.map((e, i) => {
                 const s = e.santri;
+                const statusBadge = getStatusBadge(s.status);
+                
+                // Action buttons based on role
+                let actionButtons = '';
+                if (canEdit) {
+                    actionButtons = `
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline" onclick="editSantri(${s.id})" title="Edit">✏️</button>
+                            ${canDelete ? `<button class="btn btn-sm btn-danger" onclick="deleteSantri(${s.id})" title="Hapus">🗑️</button>` : ''}
+                        </div>`;
+                } else {
+                    actionButtons = `<button class="btn btn-sm btn-outline" onclick="viewSantri(${s.id})" title="Lihat">👁️</button>`;
+                }
+                
                 return `
                 <tr>
                     <td>${i + 1}</td>
@@ -454,15 +487,25 @@
                     <td>${s.tanggal_lahir ? hitungUmur(s.tanggal_lahir) + ' th' : '-'}</td>
                     <td><span class="badge badge-info">${e.jenjang?.nama || '-'}</span></td>
                     <td>${e.wilayah?.nama || '-'}</td>
-                    <td><span class="badge ${s.status === 'aktif' ? 'badge-success' : 'badge-secondary'}">${s.status}</span></td>
-                    <td>
-                        <div class="btn-group">
-                            <button class="btn btn-sm btn-outline" onclick="editSantri(${s.id})">✏️</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteSantri(${s.id})">🗑️</button>
-                        </div>
-                    </td>
+                    <td>${statusBadge}</td>
+                    <td>${actionButtons}</td>
                 </tr>`;
             }).join('');
+        }
+        
+        function getStatusBadge(status) {
+            const badges = {
+                'aktif': '<span class="badge badge-success">Aktif</span>',
+                'nonaktif': '<span class="badge badge-secondary">Nonaktif</span>',
+                'lulus': '<span class="badge badge-primary">Lulus</span>',
+                'pindah': '<span class="badge badge-warning">Pindah</span>',
+                'menikah': '<span class="badge badge-info">Menikah</span>'
+            };
+            return badges[status] || `<span class="badge badge-secondary">${status || '-'}</span>`;
+        }
+        
+        function viewSantri(id) {
+            showToast('Anda hanya bisa melihat data. Hubungi admin/mubaligh untuk edit.', 'info');
         }
         
         function showAddModal() {
@@ -600,7 +643,14 @@
         }
         
         async function deleteSantri(id) {
-            if (!await confirmDialog('Yakin ingin menghapus santri ini?')) return;
+            // Cek apakah user adalah admin
+            const isAdmin = userRoles.some(r => r.role?.kode === 'admin');
+            if (!isAdmin) {
+                showToast('Hanya Admin yang dapat menghapus data santri', 'error');
+                return;
+            }
+            
+            if (!await confirmDialog('Yakin ingin menghapus santri ini? Data yang dihapus tidak dapat dikembalikan.')) return;
             
             try {
                 // Delete enrollment first
