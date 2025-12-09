@@ -148,7 +148,8 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Tanggal Lahir</label>
-                            <input type="date" class="form-control" name="tanggal_lahir">
+                            <input type="date" class="form-control" name="tanggal_lahir" id="inputTanggalLahir" onchange="autoSelectJenjang()">
+                            <small class="form-text" id="umurInfo"></small>
                         </div>
                     </div>
                     <div class="form-row">
@@ -178,6 +179,7 @@
                         <div class="form-group">
                             <label class="form-label required">Jenjang</label>
                             <select class="form-control" name="jenjang_id" id="selectJenjang" required><option value="">-- Pilih --</option></select>
+                            <small class="form-text" id="jenjangInfo">Akan otomatis dipilih berdasarkan umur</small>
                         </div>
                     </div>
                 </form>
@@ -197,6 +199,7 @@
     
     <script>
         let editMode = false;
+        let allJenjang = []; // Simpan data jenjang dengan info usia
         const debounceSearch = debounce(() => loadSantri(), 300);
         
         
@@ -225,8 +228,11 @@
         
         async function loadFilters() {
             try {
-                // Load jenjang
-                const { data: jenjang } = await db.from('jenjang').select('id, nama').order('urutan');
+                // Load jenjang dengan info usia
+                const { data: jenjang } = await db.from('jenjang').select('id, nama, usia_mulai, usia_sampai').eq('is_aktif', true).order('urutan');
+                allJenjang = jenjang || [];
+                
+                // Populate filter jenjang
                 if (jenjang) {
                     const select = $('filterJenjang');
                     jenjang.forEach(j => {
@@ -235,7 +241,7 @@
                 }
                 
                 // Load kelompok for form
-                const { data: kelompok } = await db.from('wilayah').select('id, nama').eq('tingkat', 'kelompok').order('nama');
+                const { data: kelompok } = await db.from('wilayah').select('id, nama').eq('tingkat', 'kelompok').eq('is_aktif', true).order('nama');
                 if (kelompok) {
                     const select = $('selectKelompok');
                     kelompok.forEach(k => {
@@ -243,16 +249,53 @@
                     });
                 }
                 
-                // Load jenjang for form
-                const { data: jenjangForm } = await db.from('jenjang').select('id, nama').eq('is_aktif', true).order('urutan');
-                if (jenjangForm) {
+                // Populate jenjang for form dengan info usia
+                if (jenjang) {
                     const select = $('selectJenjang');
-                    jenjangForm.forEach(j => {
-                        select.innerHTML += `<option value="${j.id}">${j.nama}</option>`;
+                    jenjang.forEach(j => {
+                        const usiaText = (j.usia_mulai && j.usia_sampai) ? ` (${j.usia_mulai}-${j.usia_sampai} th)` : '';
+                        select.innerHTML += `<option value="${j.id}" data-usia-mulai="${j.usia_mulai || 0}" data-usia-sampai="${j.usia_sampai || 99}">${j.nama}${usiaText}</option>`;
                     });
                 }
             } catch (error) {
                 console.error('Error loading filters:', error);
+            }
+        }
+        
+        // Fungsi untuk otomatis pilih jenjang berdasarkan umur
+        function autoSelectJenjang() {
+            const tanggalLahir = $('inputTanggalLahir').value;
+            const umurInfo = $('umurInfo');
+            const jenjangInfo = $('jenjangInfo');
+            const selectJenjang = $('selectJenjang');
+            
+            if (!tanggalLahir) {
+                umurInfo.textContent = '';
+                jenjangInfo.textContent = 'Akan otomatis dipilih berdasarkan umur';
+                return;
+            }
+            
+            // Hitung umur
+            const umur = hitungUmur(tanggalLahir);
+            umurInfo.innerHTML = `<strong>Umur: ${umur} tahun</strong>`;
+            
+            // Cari jenjang yang sesuai
+            let matchedJenjang = null;
+            for (const j of allJenjang) {
+                const usiaMin = j.usia_mulai || 0;
+                const usiaMax = j.usia_sampai || 99;
+                
+                if (umur >= usiaMin && umur <= usiaMax) {
+                    matchedJenjang = j;
+                    break;
+                }
+            }
+            
+            if (matchedJenjang) {
+                selectJenjang.value = matchedJenjang.id;
+                jenjangInfo.innerHTML = `<span class="text-success">✓ Otomatis: ${matchedJenjang.nama} (${matchedJenjang.usia_mulai}-${matchedJenjang.usia_sampai} tahun)</span>`;
+            } else {
+                jenjangInfo.innerHTML = `<span class="text-warning">⚠ Tidak ada jenjang untuk umur ${umur} tahun. Pilih manual.</span>`;
             }
         }
         
@@ -318,6 +361,8 @@
             $('modalTitle').textContent = 'Tambah Santri';
             $('santriForm').reset();
             $('santriId').value = '';
+            $('umurInfo').textContent = '';
+            $('jenjangInfo').textContent = 'Akan otomatis dipilih berdasarkan umur';
             showModal('santriModal');
         }
         
@@ -343,6 +388,14 @@
                 if (data.enrollment?.[0]) {
                     form.querySelector('[name="wilayah_id"]').value = data.enrollment[0].wilayah_id || '';
                     form.querySelector('[name="jenjang_id"]').value = data.enrollment[0].jenjang_id || '';
+                }
+                
+                // Update info umur dan jenjang
+                if (data.tanggal_lahir) {
+                    autoSelectJenjang();
+                } else {
+                    $('umurInfo').textContent = '';
+                    $('jenjangInfo').textContent = '';
                 }
                 
                 showModal('santriModal');
