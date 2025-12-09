@@ -11,7 +11,7 @@
 <body>
     <div class="app-container">
         <!-- Sidebar -->
-                <aside class="sidebar" id="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">PPG</div>
                 <div class="sidebar-brand">
@@ -50,7 +50,10 @@
         <!-- Main Content -->
         <main class="main-content">
             <header class="header">
-                <div class="header-left"><h1 class="header-title">Data Santri</h1></div>
+                <div class="header-left">
+                    <button class="btn-menu" onclick="toggleSidebar()"><span class="menu-icon">☰</span></button>
+                    <h1 class="header-title">Data Santri</h1>
+                </div>
                 <div class="header-right">
                     <div class="user-menu">
                         <div class="user-avatar" id="userAvatar">?</div>
@@ -72,7 +75,7 @@
                     <button class="btn btn-primary" onclick="showAddModal()">➕ Tambah Santri</button>
                 </div>
                 
-                <!-- Filters -->
+                <!-- Filters: Status → Daerah → Kelompok → Jenjang -->
                 <div class="card mb-lg">
                     <div class="card-body">
                         <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
@@ -81,16 +84,34 @@
                                 <input type="text" class="form-control" id="searchInput" placeholder="Cari nama..." onkeyup="debounceSearch()">
                             </div>
                             <div>
-                                <label class="form-label">Jenjang</label>
-                                <select class="form-control" id="filterJenjang" onchange="loadSantri()"><option value="">Semua</option></select>
-                            </div>
-                            <div>
                                 <label class="form-label">Status</label>
                                 <select class="form-control" id="filterStatus" onchange="loadSantri()">
                                     <option value="aktif">Aktif</option>
+                                    <option value="nonaktif">Nonaktif</option>
                                     <option value="">Semua</option>
                                 </select>
                             </div>
+                            <div>
+                                <label class="form-label">Daerah</label>
+                                <select class="form-control" id="filterDaerah" onchange="onFilterDaerahChange()">
+                                    <option value="">Semua Daerah</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Kelompok</label>
+                                <select class="form-control" id="filterKelompok" onchange="loadSantri()">
+                                    <option value="">Semua Kelompok</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Jenjang</label>
+                                <select class="form-control" id="filterJenjang" onchange="loadSantri()">
+                                    <option value="">Semua Jenjang</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="margin-top:0.75rem;">
+                            <small class="text-muted" id="infoTotal">Total: 0 santri</small>
                         </div>
                     </div>
                 </div>
@@ -173,13 +194,32 @@
                     <hr style="margin:1.5rem 0;"><h4 style="margin-bottom:1rem;">Enrollment</h4>
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label required">Kelompok</label>
-                            <select class="form-control" name="wilayah_id" id="selectKelompok" required><option value="">-- Pilih --</option></select>
+                            <label class="form-label required">Daerah</label>
+                            <select class="form-control" name="daerah_id" id="formDaerah" onchange="onFormDaerahChange()" required>
+                                <option value="">-- Pilih Daerah --</option>
+                            </select>
                         </div>
                         <div class="form-group">
+                            <label class="form-label required">Kelompok</label>
+                            <select class="form-control" name="wilayah_id" id="formKelompok" required>
+                                <option value="">-- Pilih Kelompok --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
                             <label class="form-label required">Jenjang</label>
-                            <select class="form-control" name="jenjang_id" id="selectJenjang" required><option value="">-- Pilih --</option></select>
+                            <select class="form-control" name="jenjang_id" id="formJenjang" required>
+                                <option value="">-- Pilih --</option>
+                            </select>
                             <small class="form-text" id="jenjangInfo">Akan otomatis dipilih berdasarkan umur</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select class="form-control" name="status" id="formStatus">
+                                <option value="aktif">Aktif</option>
+                                <option value="nonaktif">Nonaktif</option>
+                            </select>
                         </div>
                     </div>
                 </form>
@@ -199,9 +239,9 @@
     
     <script>
         let editMode = false;
-        let allJenjang = []; // Simpan data jenjang dengan info usia
+        let allWilayah = [];
+        let allJenjang = [];
         const debounceSearch = debounce(() => loadSantri(), 300);
-        
         
         function toggleSidebar() {
             $('sidebar').classList.toggle('collapsed');
@@ -228,46 +268,84 @@
         
         async function loadFilters() {
             try {
-                // Load jenjang dengan info usia
-                const { data: jenjang } = await db.from('jenjang').select('id, nama, usia_mulai, usia_sampai').eq('is_aktif', true).order('urutan');
+                // Load semua wilayah
+                const { data: wilayah } = await db.from('wilayah').select('*').eq('is_aktif', true).order('nama');
+                allWilayah = wilayah || [];
+                
+                // Populate filter daerah
+                const daerahList = allWilayah.filter(w => w.tingkat === 'daerah');
+                $('filterDaerah').innerHTML = '<option value="">Semua Daerah</option>' + 
+                    daerahList.map(d => `<option value="${d.id}">${d.nama}</option>`).join('');
+                
+                // Populate form daerah
+                $('formDaerah').innerHTML = '<option value="">-- Pilih Daerah --</option>' + 
+                    daerahList.map(d => `<option value="${d.id}">${d.nama}</option>`).join('');
+                
+                // Populate filter kelompok (semua kelompok)
+                const kelompokList = allWilayah.filter(w => w.tingkat === 'kelompok');
+                $('filterKelompok').innerHTML = '<option value="">Semua Kelompok</option>' + 
+                    kelompokList.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+                
+                // Load jenjang
+                const { data: jenjang } = await db.from('jenjang').select('*').eq('is_aktif', true).order('urutan');
                 allJenjang = jenjang || [];
                 
                 // Populate filter jenjang
-                if (jenjang) {
-                    const select = $('filterJenjang');
-                    jenjang.forEach(j => {
-                        select.innerHTML += `<option value="${j.id}">${j.nama}</option>`;
-                    });
-                }
+                $('filterJenjang').innerHTML = '<option value="">Semua Jenjang</option>' + 
+                    allJenjang.map(j => `<option value="${j.id}">${j.nama}</option>`).join('');
                 
-                // Load kelompok for form
-                const { data: kelompok } = await db.from('wilayah').select('id, nama').eq('tingkat', 'kelompok').eq('is_aktif', true).order('nama');
-                if (kelompok) {
-                    const select = $('selectKelompok');
-                    kelompok.forEach(k => {
-                        select.innerHTML += `<option value="${k.id}">${k.nama}</option>`;
-                    });
-                }
-                
-                // Populate jenjang for form dengan info usia
-                if (jenjang) {
-                    const select = $('selectJenjang');
-                    jenjang.forEach(j => {
+                // Populate form jenjang dengan info usia
+                $('formJenjang').innerHTML = '<option value="">-- Pilih --</option>' + 
+                    allJenjang.map(j => {
                         const usiaText = (j.usia_mulai && j.usia_sampai) ? ` (${j.usia_mulai}-${j.usia_sampai} th)` : '';
-                        select.innerHTML += `<option value="${j.id}" data-usia-mulai="${j.usia_mulai || 0}" data-usia-sampai="${j.usia_sampai || 99}">${j.nama}${usiaText}</option>`;
-                    });
-                }
+                        return `<option value="${j.id}">${j.nama}${usiaText}</option>`;
+                    }).join('');
+                    
             } catch (error) {
                 console.error('Error loading filters:', error);
             }
         }
         
-        // Fungsi untuk otomatis pilih jenjang berdasarkan umur
+        // Filter daerah berubah -> update kelompok
+        function onFilterDaerahChange() {
+            const daerahId = $('filterDaerah').value;
+            
+            let kelompokList;
+            if (daerahId) {
+                // Get kelompok dalam daerah ini (langsung dari parent_id karena struktur 2 level)
+                kelompokList = allWilayah.filter(w => w.tingkat === 'kelompok' && w.parent_id == daerahId);
+            } else {
+                kelompokList = allWilayah.filter(w => w.tingkat === 'kelompok');
+            }
+            
+            $('filterKelompok').innerHTML = '<option value="">Semua Kelompok</option>' + 
+                kelompokList.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+            
+            loadSantri();
+        }
+        
+        // Form daerah berubah -> update kelompok di form
+        function onFormDaerahChange() {
+            const daerahId = $('formDaerah').value;
+            
+            if (!daerahId) {
+                $('formKelompok').innerHTML = '<option value="">-- Pilih Kelompok --</option>';
+                return;
+            }
+            
+            // Get kelompok dalam daerah ini (langsung dari parent_id)
+            const kelompokList = allWilayah.filter(w => w.tingkat === 'kelompok' && w.parent_id == daerahId);
+            
+            $('formKelompok').innerHTML = '<option value="">-- Pilih Kelompok --</option>' + 
+                kelompokList.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+        }
+        
+        // Auto select jenjang berdasarkan umur
         function autoSelectJenjang() {
             const tanggalLahir = $('inputTanggalLahir').value;
             const umurInfo = $('umurInfo');
             const jenjangInfo = $('jenjangInfo');
-            const selectJenjang = $('selectJenjang');
+            const selectJenjang = $('formJenjang');
             
             if (!tanggalLahir) {
                 umurInfo.textContent = '';
@@ -275,16 +353,13 @@
                 return;
             }
             
-            // Hitung umur
             const umur = hitungUmur(tanggalLahir);
             umurInfo.innerHTML = `<strong>Umur: ${umur} tahun</strong>`;
             
-            // Cari jenjang yang sesuai
             let matchedJenjang = null;
             for (const j of allJenjang) {
                 const usiaMin = j.usia_mulai || 0;
                 const usiaMax = j.usia_sampai || 99;
-                
                 if (umur >= usiaMin && umur <= usiaMax) {
                     matchedJenjang = j;
                     break;
@@ -302,26 +377,57 @@
         async function loadSantri() {
             try {
                 const search = $('searchInput').value.trim();
-                const jenjangId = $('filterJenjang').value;
                 const status = $('filterStatus').value;
+                const daerahId = $('filterDaerah').value;
+                const kelompokId = $('filterKelompok').value;
+                const jenjangId = $('filterJenjang').value;
                 
-                let query = db.from('santri').select(`
-                    *,
-                    enrollment!inner(
-                        jenjang:jenjang_id(nama),
-                        wilayah:wilayah_id(nama),
-                        status
-                    )
-                `).order('nama');
+                // Build query dari enrollment
+                let query = db.from('enrollment')
+                    .select(`
+                        id,
+                        status,
+                        santri:santri_id(id, nama, nama_panggilan, jenis_kelamin, tanggal_lahir, phone, status),
+                        jenjang:jenjang_id(id, nama),
+                        wilayah:wilayah_id(id, nama, parent_id),
+                        tahun_ajaran:tahun_ajaran_id(id, kode, is_aktif)
+                    `)
+                    .eq('status', 'aktif');
                 
-                if (search) query = query.ilike('nama', `%${search}%`);
-                if (status) query = query.eq('status', status);
-                if (jenjangId) query = query.eq('enrollment.jenjang_id', jenjangId);
+                // Filter by kelompok
+                if (kelompokId) {
+                    query = query.eq('wilayah_id', kelompokId);
+                } else if (daerahId) {
+                    // Get all kelompok in this daerah
+                    const kelompokIds = allWilayah.filter(w => w.tingkat === 'kelompok' && w.parent_id == daerahId).map(w => w.id);
+                    if (kelompokIds.length > 0) {
+                        query = query.in('wilayah_id', kelompokIds);
+                    }
+                }
+                
+                // Filter by jenjang
+                if (jenjangId) {
+                    query = query.eq('jenjang_id', jenjangId);
+                }
                 
                 const { data, error } = await query;
                 if (error) throw error;
                 
-                renderTable(data || []);
+                // Filter by santri status, search, and tahun ajaran aktif
+                let filtered = (data || []).filter(e => {
+                    if (!e.santri) return false;
+                    if (!e.tahun_ajaran?.is_aktif) return false;
+                    if (status && e.santri.status !== status) return false;
+                    if (search && !e.santri.nama.toLowerCase().includes(search.toLowerCase())) return false;
+                    return true;
+                });
+                
+                // Sort by nama
+                filtered.sort((a, b) => a.santri.nama.localeCompare(b.santri.nama));
+                
+                $('infoTotal').textContent = `Total: ${filtered.length} santri`;
+                renderTable(filtered);
+                
             } catch (error) {
                 console.error('Error loading santri:', error);
                 showToast('Gagal memuat data santri', 'error');
@@ -335,16 +441,19 @@
                 return;
             }
             
-            tbody.innerHTML = data.map((s, i) => {
-                const enrollment = s.enrollment?.[0] || {};
+            tbody.innerHTML = data.map((e, i) => {
+                const s = e.santri;
                 return `
                 <tr>
                     <td>${i + 1}</td>
-                    <td><strong>${s.nama}</strong>${s.nama_panggilan ? `<br><small class="text-muted">${s.nama_panggilan}</small>` : ''}</td>
+                    <td>
+                        <strong>${s.nama}</strong>
+                        ${s.nama_panggilan ? `<br><small class="text-muted">${s.nama_panggilan}</small>` : ''}
+                    </td>
                     <td>${s.jenis_kelamin || '-'}</td>
-                    <td>${hitungUmur(s.tanggal_lahir)} th</td>
-                    <td>${enrollment.jenjang?.nama || '-'}</td>
-                    <td>${enrollment.wilayah?.nama || '-'}</td>
+                    <td>${s.tanggal_lahir ? hitungUmur(s.tanggal_lahir) + ' th' : '-'}</td>
+                    <td><span class="badge badge-info">${e.jenjang?.nama || '-'}</span></td>
+                    <td>${e.wilayah?.nama || '-'}</td>
                     <td><span class="badge ${s.status === 'aktif' ? 'badge-success' : 'badge-secondary'}">${s.status}</span></td>
                     <td>
                         <div class="btn-group">
@@ -363,35 +472,48 @@
             $('santriId').value = '';
             $('umurInfo').textContent = '';
             $('jenjangInfo').textContent = 'Akan otomatis dipilih berdasarkan umur';
+            $('formKelompok').innerHTML = '<option value="">-- Pilih Kelompok --</option>';
+            $('formStatus').value = 'aktif';
             showModal('santriModal');
         }
         
         async function editSantri(id) {
             try {
-                const { data, error } = await db.from('santri').select(`*, enrollment(*)`).eq('id', id).single();
+                // Get santri with enrollment
+                const { data: santri, error } = await db.from('santri').select('*').eq('id', id).single();
                 if (error) throw error;
+                
+                // Get active enrollment
+                const { data: enrollment } = await db.from('enrollment')
+                    .select('*, wilayah:wilayah_id(*), jenjang:jenjang_id(*)')
+                    .eq('santri_id', id)
+                    .eq('status', 'aktif')
+                    .single();
                 
                 editMode = true;
                 $('modalTitle').textContent = 'Edit Santri';
-                $('santriId').value = data.id;
+                $('santriId').value = santri.id;
                 
-                // Set form values
                 const form = $('santriForm');
-                form.querySelector('[name="nama"]').value = data.nama || '';
-                form.querySelector('[name="nama_panggilan"]').value = data.nama_panggilan || '';
-                form.querySelector('[name="tempat_lahir"]').value = data.tempat_lahir || '';
-                form.querySelector('[name="tanggal_lahir"]').value = data.tanggal_lahir || '';
-                form.querySelector('[name="jenis_kelamin"]').value = data.jenis_kelamin || '';
-                form.querySelector('[name="phone"]').value = data.phone || '';
-                form.querySelector('[name="alamat"]').value = data.alamat || '';
+                form.querySelector('[name="nama"]').value = santri.nama || '';
+                form.querySelector('[name="nama_panggilan"]').value = santri.nama_panggilan || '';
+                form.querySelector('[name="tempat_lahir"]').value = santri.tempat_lahir || '';
+                form.querySelector('[name="tanggal_lahir"]').value = santri.tanggal_lahir || '';
+                form.querySelector('[name="jenis_kelamin"]').value = santri.jenis_kelamin || '';
+                form.querySelector('[name="phone"]').value = santri.phone || '';
+                form.querySelector('[name="alamat"]').value = santri.alamat || '';
+                $('formStatus').value = santri.status || 'aktif';
                 
-                if (data.enrollment?.[0]) {
-                    form.querySelector('[name="wilayah_id"]').value = data.enrollment[0].wilayah_id || '';
-                    form.querySelector('[name="jenjang_id"]').value = data.enrollment[0].jenjang_id || '';
+                // Set enrollment data
+                if (enrollment && enrollment.wilayah) {
+                    // Set daerah (parent dari kelompok)
+                    $('formDaerah').value = enrollment.wilayah.parent_id;
+                    onFormDaerahChange();
+                    $('formKelompok').value = enrollment.wilayah_id;
+                    $('formJenjang').value = enrollment.jenjang_id || '';
                 }
                 
-                // Update info umur dan jenjang
-                if (data.tanggal_lahir) {
+                if (santri.tanggal_lahir) {
                     autoSelectJenjang();
                 } else {
                     $('umurInfo').textContent = '';
@@ -422,17 +544,17 @@
                     nama: formData.nama,
                     nama_panggilan: formData.nama_panggilan,
                     tempat_lahir: formData.tempat_lahir,
-                    tanggal_lahir: formData.tanggal_lahir,
+                    tanggal_lahir: formData.tanggal_lahir || null,
                     jenis_kelamin: formData.jenis_kelamin,
                     phone: formData.phone,
                     alamat: formData.alamat,
-                    status: 'aktif'
+                    status: formData.status || 'aktif'
                 };
                 
                 let santriId = formData.id;
                 
                 if (editMode && santriId) {
-                    // Update
+                    // Update santri
                     const { error } = await db.from('santri').update(santriData).eq('id', santriId);
                     if (error) throw error;
                     
@@ -458,7 +580,7 @@
                         santri_id: santriId,
                         wilayah_id: formData.wilayah_id,
                         jenjang_id: formData.jenjang_id,
-                        tahun_ajaran_id: ta?.id || 1,
+                        tahun_ajaran_id: ta?.id,
                         status: 'aktif',
                         created_by: currentUserData?.id
                     });
