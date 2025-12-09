@@ -49,6 +49,7 @@
                 <a href="rapor.html" class="nav-item active"><span class="nav-icon">📋</span><span>Rapor</span></a>
             </nav>
         </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
         
         <main class="main-content">
             <header class="header no-print">
@@ -195,10 +196,19 @@
     <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/auth.js"></script>
+    <script src="js/sidebar.js"></script>
     
     <script>
+        
+        function toggleSidebar() {
+            $('sidebar').classList.toggle('collapsed');
+            $('sidebarOverlay').classList.toggle('show');
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             if (!await requireAuth()) return;
+            updateSidebarUserInfo();
+            initSidebar();
             updateUserUI();
             await loadFilters();
         });
