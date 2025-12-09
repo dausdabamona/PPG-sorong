@@ -103,12 +103,16 @@ function getHeaderHTML(pageTitle = '') {
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
-    const mainContent = document.querySelector('.main-content');
     
-    sidebar.classList.toggle('collapsed');
-    
-    if (overlay) {
-        overlay.classList.toggle('show');
+    if (window.innerWidth <= 768) {
+        // Mobile: toggle show class
+        sidebar.classList.toggle('show');
+        if (overlay) {
+            overlay.classList.toggle('show');
+        }
+    } else {
+        // Desktop: toggle collapsed class
+        sidebar.classList.toggle('collapsed');
     }
     
     // Save state to localStorage
@@ -121,10 +125,9 @@ function initSidebar() {
     const sidebar = document.getElementById('sidebar');
     const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
     
-    // On mobile, always start collapsed
-    if (window.innerWidth <= 992) {
-        sidebar.classList.add('collapsed');
-    } else if (isCollapsed) {
+    // On mobile, always start hidden (no class needed, CSS handles it)
+    // On desktop, check saved state
+    if (window.innerWidth > 768 && isCollapsed) {
         sidebar.classList.add('collapsed');
     }
 }

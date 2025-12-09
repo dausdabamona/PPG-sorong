@@ -113,35 +113,49 @@
         async function loadQuickLoginPanel() {
             const panel = $('quickLoginPanel');
             
-            // Ambil semua user beserta role-nya
-            const { data: users, error } = await db
-                .from('users')
-                .select(`
-                    id, nama, email, status,
-                    user_role(
-                        is_aktif,
-                        role:role_id(kode, nama, level)
-                    )
-                `)
-                .eq('status', 'aktif');
-            
-            if (error || !users || users.length === 0) {
-                panel.innerHTML = '<p class="text-muted text-center text-sm">Tidak ada user</p>';
-                return;
-            }
-            
-            // Group roles by level
-            const levelOrder = ['sistem', 'daerah', 'desa', 'kelompok'];
-            const levelLabels = {
-                'sistem': '🔧 Sistem',
-                'daerah': '🏛️ Daerah', 
-                'desa': '🏘️ Desa',
-                'kelompok': '👥 Kelompok'
-            };
-            
-            let html = '';
-            
-            users.forEach(user => {
+            try {
+                // Ambil semua user beserta role-nya
+                const { data: users, error } = await db
+                    .from('users')
+                    .select(`
+                        id, nama, email, status,
+                        user_role(
+                            is_aktif,
+                            role:role_id(kode, nama, level)
+                        )
+                    `);
+                
+                console.log('Quick Login - Users:', users, 'Error:', error);
+                
+                if (error) {
+                    panel.innerHTML = `<p class="text-danger text-center text-sm">Error: ${error.message}</p>`;
+                    return;
+                }
+                
+                if (!users || users.length === 0) {
+                    panel.innerHTML = '<p class="text-muted text-center text-sm">Tidak ada user</p>';
+                    return;
+                }
+                
+                // Filter hanya user aktif
+                const activeUsers = users.filter(u => u.status === 'aktif');
+                
+                if (activeUsers.length === 0) {
+                    panel.innerHTML = '<p class="text-muted text-center text-sm">Tidak ada user aktif</p>';
+                    return;
+                }
+                
+                const levelOrder = ['sistem', 'daerah', 'desa', 'kelompok'];
+                const levelLabels = {
+                    'sistem': '🔧 Sistem',
+                    'daerah': '🏛️ Daerah', 
+                    'desa': '🏘️ Desa',
+                    'kelompok': '👥 Kelompok'
+                };
+                
+                let html = '';
+                
+                activeUsers.forEach(user => {
                 const activeRoles = (user.user_role || [])
                     .filter(ur => ur.is_aktif && ur.role)
                     .map(ur => ur.role);
@@ -183,9 +197,14 @@
                 });
                 
                 html += `</div></div>`;
-            });
-            
-            panel.innerHTML = html || '<p class="text-muted text-center text-sm">Tidak ada user dengan role aktif</p>';
+                });
+                
+                panel.innerHTML = html || '<p class="text-muted text-center text-sm">Tidak ada user dengan role aktif</p>';
+                
+            } catch (err) {
+                console.error('Quick Login Error:', err);
+                panel.innerHTML = `<p class="text-danger text-center text-sm">Error: ${err.message}</p>`;
+            }
         }
         
         async function quickLogin(email, roleKode) {
