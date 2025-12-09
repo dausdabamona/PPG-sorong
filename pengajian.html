@@ -7,10 +7,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .jadwal-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; }
+        .jadwal-harian { background: #dbeafe; color: #1e40af; }
+        .jadwal-mingguan { background: #dcfce7; color: #166534; }
+        .jadwal-bulanan { background: #fef3c7; color: #92400e; }
+        .jadwal-3bulanan { background: #f3e8ff; color: #7c3aed; }
+        .jadwal-sekali { background: #f1f5f9; color: #475569; }
+        .peserta-count { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+        .wilayah-select { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .wilayah-select .form-group { flex: 1; min-width: 150px; }
+        .info-box { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-md); padding: 1rem; margin-top: 0.5rem; }
+        .info-box h4 { font-size: 0.875rem; color: var(--gray-600); margin-bottom: 0.5rem; }
+    </style>
 </head>
 <body>
     <div class="app-container">
-                <aside class="sidebar" id="sidebar">
+        <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">PPG</div>
                 <div class="sidebar-brand">
@@ -48,13 +61,18 @@
         
         <main class="main-content">
             <header class="header">
-                <div class="header-left"><h1 class="header-title">Pengajian</h1></div>
+                <div class="header-left">
+                    <button class="btn-menu" onclick="toggleSidebar()"><span class="menu-icon">☰</span></button>
+                    <h1 class="header-title">Pengajian</h1>
+                </div>
                 <div class="header-right">
-                    <div class="user-menu">
+                    <div class="header-user">
                         <div class="user-avatar" id="userAvatar">?</div>
-                        <div class="user-info"><div class="user-name" id="userName">Loading...</div><div class="user-role" id="userRole">-</div></div>
+                        <div class="user-info">
+                            <div class="user-name" id="userName">Loading...</div>
+                            <div class="user-role" id="userRole">-</div>
+                        </div>
                     </div>
-                    <button class="btn btn-outline btn-sm" onclick="logout()">Keluar</button>
                 </div>
             </header>
             
@@ -64,28 +82,47 @@
                         <div class="breadcrumb"><a href="dashboard.html">Dashboard</a><span>/</span><span>Pengajian</span></div>
                         <h2 class="page-title">Daftar Pengajian</h2>
                     </div>
-                    <button class="btn btn-primary" onclick="showAddModal()">➕ Buat Pengajian</button>
+                    <div style="display:flex;gap:0.5rem;">
+                        <button class="btn btn-outline" onclick="showJadwalModal()">📅 Kelola Jadwal</button>
+                        <button class="btn btn-primary" onclick="showAddModal()">➕ Buat Pengajian</button>
+                    </div>
+                </div>
+                
+                <!-- Stats -->
+                <div class="stats-grid mb-lg">
+                    <div class="stat-card">
+                        <div class="stat-icon primary">📖</div>
+                        <div class="stat-content"><div class="stat-value" id="totalPengajian">0</div><div class="stat-label">Total Pengajian</div></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success">📅</div>
+                        <div class="stat-content"><div class="stat-value" id="pengajianBulanIni">0</div><div class="stat-label">Bulan Ini</div></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon warning">🔄</div>
+                        <div class="stat-content"><div class="stat-value" id="jadwalAktif">0</div><div class="stat-label">Jadwal Aktif</div></div>
+                    </div>
                 </div>
                 
                 <!-- Filters -->
                 <div class="card mb-lg">
                     <div class="card-body">
                         <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
-                            <div>
-                                <label class="form-label">Bulan</label>
-                                <input type="month" class="form-control" id="filterBulan" onchange="loadPengajian()">
-                            </div>
-                            <div>
-                                <label class="form-label">Jenis</label>
-                                <select class="form-control" id="filterJenis" onchange="loadPengajian()">
-                                    <option value="">Semua</option>
-                                    <option value="masal">Masal</option>
-                                    <option value="mandiri">Mandiri</option>
+                            <div class="form-group" style="margin:0;">
+                                <label class="form-label">Daerah</label>
+                                <select class="form-control" id="filterDaerah" onchange="onFilterDaerahChange()">
+                                    <option value="">Semua Daerah</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="form-label">Kelompok</label>
-                                <select class="form-control" id="filterKelompok" onchange="loadPengajian()"><option value="">Semua</option></select>
+                            <div class="form-group" style="margin:0;">
+                                <label class="form-label">Jenjang</label>
+                                <select class="form-control" id="filterJenjang" onchange="loadPengajian()">
+                                    <option value="">Semua Jenjang</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label class="form-label">Bulan</label>
+                                <input type="month" class="form-control" id="filterBulan" onchange="loadPengajian()">
                             </div>
                         </div>
                     </div>
@@ -98,16 +135,17 @@
                             <table class="table" id="pengajianTable">
                                 <thead>
                                     <tr>
-                                        <th>No</th>
                                         <th>Tanggal</th>
-                                        <th>Jenis</th>
-                                        <th>Kelompok</th>
+                                        <th>Wilayah</th>
+                                        <th>Jenjang</th>
+                                        <th>Jadwal</th>
+                                        <th>Waktu</th>
                                         <th>Mubaligh</th>
-                                        <th>Materi</th>
+                                        <th>Peserta</th>
                                         <th>Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody><tr><td colspan="7" class="text-center text-muted py-4">Memuat data...</td></tr></tbody>
+                                <tbody></tbody>
                             </table>
                         </div>
                     </div>
@@ -116,51 +154,221 @@
         </main>
     </div>
     
-    <!-- Modal Form -->
+    <!-- Modal Form Pengajian -->
     <div class="modal" id="pengajianModal">
-        <div class="modal-content">
+        <div class="modal-content modal-lg">
             <div class="modal-header">
                 <h3 id="modalTitle">Buat Pengajian</h3>
                 <button class="modal-close" onclick="hideModal('pengajianModal')">&times;</button>
             </div>
             <div class="modal-body">
                 <form id="pengajianForm">
-                    <input type="hidden" name="id" id="pengajianId">
+                    <input type="hidden" id="pengajianId" name="id">
+                    
                     <div class="form-group">
-                        <label class="form-label required">Jenis Pengajian</label>
-                        <select class="form-control" name="jenis" required>
-                            <option value="">-- Pilih --</option>
-                            <option value="masal">Masal (Kelompok)</option>
-                            <option value="mandiri">Mandiri (1-on-1)</option>
-                        </select>
+                        <label class="form-label required">Tingkat Wilayah</label>
+                        <div style="display:flex;gap:1rem;">
+                            <label><input type="radio" name="tingkat_wilayah" value="daerah" onchange="onTingkatChange()"> Daerah</label>
+                            <label><input type="radio" name="tingkat_wilayah" value="desa" onchange="onTingkatChange()"> Desa</label>
+                            <label><input type="radio" name="tingkat_wilayah" value="kelompok" checked onchange="onTingkatChange()"> Kelompok</label>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label required">Kelompok</label>
-                        <select class="form-control" name="wilayah_id" id="selectKelompokForm" required><option value="">-- Pilih --</option></select>
+                    
+                    <div class="wilayah-select">
+                        <div class="form-group" id="groupDaerah">
+                            <label class="form-label required">Daerah</label>
+                            <select class="form-control" id="selectDaerah" name="daerah_id" onchange="onDaerahChange()">
+                                <option value="">-- Pilih Daerah --</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="groupDesa" style="display:none;">
+                            <label class="form-label required">Desa</label>
+                            <select class="form-control" id="selectDesa" name="desa_id" onchange="onDesaChange()">
+                                <option value="">-- Pilih Desa --</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="groupKelompok" style="display:none;">
+                            <label class="form-label required">Kelompok</label>
+                            <select class="form-control" id="selectKelompok" name="wilayah_id">
+                                <option value="">-- Pilih Kelompok --</option>
+                            </select>
+                        </div>
                     </div>
+                    
                     <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Jenjang</label>
+                            <select class="form-control" id="selectJenjang" name="jenjang_id" onchange="updatePesertaCount()">
+                                <option value="">Semua Jenjang</option>
+                            </select>
+                            <small class="form-text">Kosongkan untuk semua jenjang</small>
+                        </div>
                         <div class="form-group">
                             <label class="form-label required">Tanggal</label>
                             <input type="date" class="form-control" name="tanggal" required>
                         </div>
+                    </div>
+                    
+                    <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">Waktu Mulai</label>
-                            <input type="time" class="form-control" name="waktu_mulai">
+                            <label class="form-label">Jam Mulai</label>
+                            <input type="time" class="form-control" name="jam_mulai">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Jam Selesai</label>
+                            <input type="time" class="form-control" name="jam_selesai">
                         </div>
                     </div>
-                    <div class="form-group">
+                    
+                    <div class="form-group" id="groupMubaligh" style="display:none;">
                         <label class="form-label">Mubaligh</label>
-                        <select class="form-control" name="mubaligh_id" id="selectMubaligh"><option value="">-- Pilih --</option></select>
+                        <select class="form-control" id="selectMubaligh" name="mubaligh_id">
+                            <option value="">-- Pilih Mubaligh --</option>
+                        </select>
+                        <small class="form-text">Wajib diisi untuk pengajian di tingkat Kelompok</small>
                     </div>
+                    
                     <div class="form-group">
-                        <label class="form-label">Materi</label>
-                        <textarea class="form-control" name="materi" rows="2" placeholder="Opsional"></textarea>
+                        <label class="form-label">Materi/Keterangan</label>
+                        <textarea class="form-control" name="materi" rows="2"></textarea>
+                    </div>
+                    
+                    <!-- Info Peserta -->
+                    <div class="info-box" id="infoPeserta">
+                        <h4>👥 Perkiraan Peserta</h4>
+                        <div class="peserta-count" id="pesertaCount">0</div>
+                        <small class="text-muted">santri aktif di wilayah & jenjang terpilih</small>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="hideModal('pengajianModal')">Batal</button>
-                <button class="btn btn-primary" onclick="savePengajian()" id="btnSave">Simpan</button>
+                <button class="btn btn-primary" onclick="savePengajian()">Simpan</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Jadwal Rutin -->
+    <div class="modal" id="jadwalModal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3>Kelola Jadwal Rutin</h3>
+                <button class="modal-close" onclick="hideModal('jadwalModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                    <h4>Daftar Jadwal</h4>
+                    <button class="btn btn-sm btn-primary" onclick="showAddJadwalForm()">➕ Tambah Jadwal</button>
+                </div>
+                
+                <div id="jadwalList">
+                    <p class="text-muted text-center">Memuat...</p>
+                </div>
+                
+                <!-- Form Jadwal -->
+                <div id="jadwalFormContainer" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--gray-200);">
+                    <h4 id="jadwalFormTitle">Tambah Jadwal Baru</h4>
+                    <form id="jadwalForm">
+                        <input type="hidden" id="jadwalId" name="id">
+                        
+                        <div class="form-group">
+                            <label class="form-label required">Nama Jadwal</label>
+                            <input type="text" class="form-control" name="nama" placeholder="cth: Pengajian Rutin Klasaman" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label required">Wilayah</label>
+                                <select class="form-control" id="jadwalWilayah" name="wilayah_id" required>
+                                    <option value="">-- Pilih --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Jenjang</label>
+                                <select class="form-control" id="jadwalJenjang" name="jenjang_id">
+                                    <option value="">Semua Jenjang</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label required">Tipe Jadwal</label>
+                                <select class="form-control" name="jadwal_tipe" id="jadwalTipe" onchange="onJadwalTipeChange()" required>
+                                    <option value="harian">Harian</option>
+                                    <option value="mingguan" selected>Mingguan</option>
+                                    <option value="bulanan">Bulanan</option>
+                                    <option value="3bulanan">Per 3 Bulan</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="groupJadwalHari">
+                                <label class="form-label required">Hari</label>
+                                <select class="form-control" name="jadwal_hari" id="jadwalHari">
+                                    <option value="0">Minggu</option>
+                                    <option value="1">Senin</option>
+                                    <option value="2">Selasa</option>
+                                    <option value="3">Rabu</option>
+                                    <option value="4">Kamis</option>
+                                    <option value="5">Jumat</option>
+                                    <option value="6">Sabtu</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="groupJadwalTanggal" style="display:none;">
+                                <label class="form-label required">Tanggal</label>
+                                <select class="form-control" name="jadwal_tanggal" id="jadwalTanggal">
+                                    <!-- 1-31 -->
+                                </select>
+                            </div>
+                            <div class="form-group" id="groupJadwalBulan" style="display:none;">
+                                <label class="form-label required">Bulan</label>
+                                <select class="form-control" name="jadwal_bulan" id="jadwalBulan">
+                                    <option value="1">Januari</option>
+                                    <option value="4">April</option>
+                                    <option value="7">Juli</option>
+                                    <option value="10">Oktober</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Jam Mulai</label>
+                                <input type="time" class="form-control" name="jam_mulai" value="19:00">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Jam Selesai</label>
+                                <input type="time" class="form-control" name="jam_selesai" value="21:00">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Mubaligh</label>
+                            <select class="form-control" id="jadwalMubaligh" name="mubaligh_id">
+                                <option value="">-- Pilih Mubaligh --</option>
+                            </select>
+                        </div>
+                        
+                        <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+                            <button type="button" class="btn btn-secondary" onclick="hideJadwalForm()">Batal</button>
+                            <button type="button" class="btn btn-primary" onclick="saveJadwal()">Simpan Jadwal</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Detail Peserta -->
+    <div class="modal" id="pesertaModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Daftar Peserta</h3>
+                <button class="modal-close" onclick="hideModal('pesertaModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="pesertaList">
+                    <p class="text-muted text-center">Memuat...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -172,180 +380,642 @@
     <script src="js/sidebar.js"></script>
     
     <script>
+        let allWilayah = [], allJenjang = [], allMubaligh = [], allJadwal = [];
         let editMode = false;
         
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!await requireAuth()) return;
+            updateSidebarUserInfo();
+            initSidebar();
+            
+            // Set default filter bulan
+            const now = new Date();
+            $('filterBulan').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            
+            // Populate tanggal dropdown
+            const tanggalSelect = $('jadwalTanggal');
+            for(let i=1; i<=31; i++) {
+                tanggalSelect.innerHTML += `<option value="${i}">${i}</option>`;
+            }
+            
+            await loadMasterData();
+            await loadPengajian();
+            await loadStats();
+        });
         
         function toggleSidebar() {
             $('sidebar').classList.toggle('collapsed');
             $('sidebarOverlay').classList.toggle('show');
         }
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            if (!await requireAuth()) return;
-            updateSidebarUserInfo();
-            initSidebar();
-            updateUserUI();
-            
-            // Set default month filter
-            const now = new Date();
-            $('filterBulan').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-            
-            await loadFilters();
-            await loadPengajian();
-        });
         
-        function updateUserUI() {
-            if (currentUserData) {
-                $('userName').textContent = currentUserData.nama || currentUserData.email;
-                $('userAvatar').textContent = (currentUserData.nama || 'U').charAt(0).toUpperCase();
-                if (userRoles.length > 0) $('userRole').textContent = userRoles[0].role?.nama || '-';
-            }
+        async function loadMasterData() {
+            // Load Wilayah
+            const { data: wilayah } = await db.from('wilayah').select('*').eq('is_aktif', true).order('nama');
+            allWilayah = wilayah || [];
+            
+            // Populate filter daerah
+            const daerahList = allWilayah.filter(w => w.tingkat === 'daerah');
+            $('filterDaerah').innerHTML = '<option value="">Semua Daerah</option>' + 
+                daerahList.map(d => `<option value="${d.id}">${d.nama}</option>`).join('');
+            $('selectDaerah').innerHTML = '<option value="">-- Pilih Daerah --</option>' + 
+                daerahList.map(d => `<option value="${d.id}">${d.nama}</option>`).join('');
+            
+            // Populate jadwal wilayah (semua level)
+            $('jadwalWilayah').innerHTML = '<option value="">-- Pilih --</option>' +
+                '<optgroup label="Daerah">' + daerahList.map(w => `<option value="${w.id}">${w.nama}</option>`).join('') + '</optgroup>' +
+                '<optgroup label="Desa">' + allWilayah.filter(w => w.tingkat === 'desa').map(w => `<option value="${w.id}">${w.nama}</option>`).join('') + '</optgroup>' +
+                '<optgroup label="Kelompok">' + allWilayah.filter(w => w.tingkat === 'kelompok').map(w => `<option value="${w.id}">${w.nama}</option>`).join('') + '</optgroup>';
+            
+            // Load Jenjang
+            const { data: jenjang } = await db.from('jenjang').select('*').eq('is_aktif', true).order('urutan');
+            allJenjang = jenjang || [];
+            
+            const jenjangOptions = allJenjang.map(j => `<option value="${j.id}">${j.nama}</option>`).join('');
+            $('filterJenjang').innerHTML = '<option value="">Semua Jenjang</option>' + jenjangOptions;
+            $('selectJenjang').innerHTML = '<option value="">Semua Jenjang</option>' + jenjangOptions;
+            $('jadwalJenjang').innerHTML = '<option value="">Semua Jenjang</option>' + jenjangOptions;
+            
+            // Load Mubaligh (users dengan role mubaligh atau admin)
+            const { data: users } = await db.from('users').select('id, nama, email').eq('status', 'aktif').order('nama');
+            allMubaligh = users || [];
+            
+            const mubalighOptions = allMubaligh.map(m => `<option value="${m.id}">${m.nama || m.email}</option>`).join('');
+            $('selectMubaligh').innerHTML = '<option value="">-- Pilih Mubaligh --</option>' + mubalighOptions;
+            $('jadwalMubaligh').innerHTML = '<option value="">-- Pilih Mubaligh --</option>' + mubalighOptions;
         }
         
-        async function loadFilters() {
-            try {
-                const { data: kelompok } = await db.from('wilayah').select('id, nama').eq('tingkat', 'kelompok').order('nama');
-                if (kelompok) {
-                    const html = kelompok.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
-                    $('filterKelompok').innerHTML += html;
-                    $('selectKelompokForm').innerHTML += html;
-                }
-                
-                const { data: users } = await db.from('users').select('id, nama').eq('status', 'aktif').order('nama');
-                if (users) {
-                    $('selectMubaligh').innerHTML += users.map(u => `<option value="${u.id}">${u.nama}</option>`).join('');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-            }
+        async function loadStats() {
+            // Total pengajian
+            const { count: total } = await db.from('pengajian').select('*', { count: 'exact', head: true });
+            $('totalPengajian').textContent = total || 0;
+            
+            // Bulan ini
+            const startMonth = new Date();
+            startMonth.setDate(1);
+            const { count: bulanIni } = await db.from('pengajian')
+                .select('*', { count: 'exact', head: true })
+                .gte('tanggal', startMonth.toISOString().split('T')[0]);
+            $('pengajianBulanIni').textContent = bulanIni || 0;
+            
+            // Jadwal aktif
+            const { count: jadwal } = await db.from('jadwal_pengajian')
+                .select('*', { count: 'exact', head: true })
+                .eq('is_aktif', true);
+            $('jadwalAktif').textContent = jadwal || 0;
         }
         
         async function loadPengajian() {
-            try {
-                const bulan = $('filterBulan').value;
-                const jenis = $('filterJenis').value;
-                const kelompok = $('filterKelompok').value;
-                
-                let query = db.from('pengajian').select(`
-                    *,
-                    wilayah:wilayah_id(nama),
-                    mubaligh:mubaligh_id(nama)
-                `).order('tanggal', { ascending: false });
-                
-                if (bulan) {
-                    const [year, month] = bulan.split('-');
-                    const start = `${year}-${month}-01`;
-                    const end = `${year}-${month}-31`;
-                    query = query.gte('tanggal', start).lte('tanggal', end);
-                }
-                if (jenis) query = query.eq('jenis', jenis);
-                if (kelompok) query = query.eq('wilayah_id', kelompok);
-                
-                const { data, error } = await query;
-                if (error) throw error;
-                
-                renderTable(data || []);
-            } catch (error) {
-                console.error('Error:', error);
-                showToast('Gagal memuat data', 'error');
+            const filterDaerah = $('filterDaerah').value;
+            const filterJenjang = $('filterJenjang').value;
+            const filterBulan = $('filterBulan').value;
+            
+            let query = db.from('pengajian')
+                .select(`*, wilayah:wilayah_id(id, nama, tingkat), jenjang:jenjang_id(nama), mubaligh:mubaligh_id(nama)`)
+                .order('tanggal', { ascending: false });
+            
+            if (filterBulan) {
+                const [year, month] = filterBulan.split('-');
+                const startDate = `${year}-${month}-01`;
+                const endDate = new Date(year, month, 0).toISOString().split('T')[0];
+                query = query.gte('tanggal', startDate).lte('tanggal', endDate);
             }
+            
+            if (filterJenjang) {
+                query = query.eq('jenjang_id', filterJenjang);
+            }
+            
+            const { data, error } = await query;
+            if (error) {
+                console.error(error);
+                return;
+            }
+            
+            // Filter by daerah (need to check hierarchy)
+            let filtered = data || [];
+            if (filterDaerah) {
+                const desaIds = allWilayah.filter(w => w.parent_id == filterDaerah).map(w => w.id);
+                const kelompokIds = allWilayah.filter(w => desaIds.includes(w.parent_id)).map(w => w.id);
+                const allIds = [parseInt(filterDaerah), ...desaIds, ...kelompokIds];
+                filtered = filtered.filter(p => allIds.includes(p.wilayah_id));
+            }
+            
+            renderTable(filtered);
         }
         
         function renderTable(data) {
             const tbody = $$('#pengajianTable tbody');
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Tidak ada data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data</td></tr>';
                 return;
             }
             
-            tbody.innerHTML = data.map((p, i) => `
+            const hariNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            
+            tbody.innerHTML = data.map(p => {
+                const jadwalClass = p.jadwal_tipe ? `jadwal-${p.jadwal_tipe}` : 'jadwal-sekali';
+                const jadwalText = getJadwalText(p);
+                const waktu = p.jam_mulai ? `${p.jam_mulai.substring(0,5)}${p.jam_selesai ? ' - '+p.jam_selesai.substring(0,5) : ''}` : '-';
+                
+                return `
                 <tr>
-                    <td>${i + 1}</td>
-                    <td>${formatTanggal(p.tanggal)}<br><small class="text-muted">${formatWaktu(p.waktu_mulai) || ''}</small></td>
-                    <td><span class="badge ${p.jenis === 'masal' ? 'badge-primary' : 'badge-secondary'}">${p.jenis}</span></td>
-                    <td>${p.wilayah?.nama || '-'}</td>
+                    <td><strong>${formatTanggal(p.tanggal)}</strong></td>
+                    <td>
+                        ${p.wilayah?.nama || '-'}
+                        <br><small class="text-muted">${p.wilayah?.tingkat || ''}</small>
+                    </td>
+                    <td>${p.jenjang?.nama || '<span class="text-muted">Semua</span>'}</td>
+                    <td><span class="jadwal-badge ${jadwalClass}">${jadwalText}</span></td>
+                    <td>${waktu}</td>
                     <td>${p.mubaligh?.nama || '-'}</td>
-                    <td>${p.materi || '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="showPeserta(${p.wilayah_id}, ${p.jenjang_id || 'null'})">
+                            👥 Lihat
+                        </button>
+                    </td>
                     <td>
                         <div class="btn-group">
-                            <a href="presensi.html?pengajian_id=${p.id}" class="btn btn-sm btn-success">✅ Presensi</a>
                             <button class="btn btn-sm btn-outline" onclick="editPengajian(${p.id})">✏️</button>
                             <button class="btn btn-sm btn-danger" onclick="deletePengajian(${p.id})">🗑️</button>
                         </div>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
+        
+        function getJadwalText(p) {
+            const hariNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            switch(p.jadwal_tipe) {
+                case 'harian': return '🔄 Harian';
+                case 'mingguan': return `📅 ${hariNames[p.jadwal_hari] || 'Mingguan'}`;
+                case 'bulanan': return `📆 Tgl ${p.jadwal_tanggal || '-'}`;
+                case '3bulanan': return `🗓️ Per 3 Bulan`;
+                default: return '📍 Sekali';
+            }
+        }
+        
+        // ==================== FORM HANDLERS ====================
+        
+        function onFilterDaerahChange() {
+            loadPengajian();
+        }
+        
+        function onTingkatChange() {
+            const tingkat = document.querySelector('input[name="tingkat_wilayah"]:checked').value;
+            
+            $('groupDaerah').style.display = 'block';
+            $('groupDesa').style.display = ['desa', 'kelompok'].includes(tingkat) ? 'block' : 'none';
+            $('groupKelompok').style.display = tingkat === 'kelompok' ? 'block' : 'none';
+            $('groupMubaligh').style.display = tingkat === 'kelompok' ? 'block' : 'none';
+            
+            // Reset selections
+            $('selectDesa').innerHTML = '<option value="">-- Pilih Desa --</option>';
+            $('selectKelompok').innerHTML = '<option value="">-- Pilih Kelompok --</option>';
+            
+            updatePesertaCount();
+        }
+        
+        function onDaerahChange() {
+            const daerahId = $('selectDaerah').value;
+            const tingkat = document.querySelector('input[name="tingkat_wilayah"]:checked').value;
+            
+            if (tingkat === 'daerah') {
+                updatePesertaCount();
+                return;
+            }
+            
+            // Populate desa
+            const desaList = allWilayah.filter(w => w.tingkat === 'desa' && w.parent_id == daerahId);
+            $('selectDesa').innerHTML = '<option value="">-- Pilih Desa --</option>' +
+                desaList.map(d => `<option value="${d.id}">${d.nama}</option>`).join('');
+            $('selectKelompok').innerHTML = '<option value="">-- Pilih Kelompok --</option>';
+            
+            updatePesertaCount();
+        }
+        
+        function onDesaChange() {
+            const desaId = $('selectDesa').value;
+            const tingkat = document.querySelector('input[name="tingkat_wilayah"]:checked').value;
+            
+            if (tingkat === 'desa') {
+                updatePesertaCount();
+                return;
+            }
+            
+            // Populate kelompok
+            const kelompokList = allWilayah.filter(w => w.tingkat === 'kelompok' && w.parent_id == desaId);
+            $('selectKelompok').innerHTML = '<option value="">-- Pilih Kelompok --</option>' +
+                kelompokList.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+            
+            updatePesertaCount();
+        }
+        
+        async function updatePesertaCount() {
+            const tingkat = document.querySelector('input[name="tingkat_wilayah"]:checked').value;
+            const jenjangId = $('selectJenjang').value;
+            let wilayahId = null;
+            
+            if (tingkat === 'daerah') wilayahId = $('selectDaerah').value;
+            else if (tingkat === 'desa') wilayahId = $('selectDesa').value;
+            else wilayahId = $('selectKelompok').value;
+            
+            if (!wilayahId) {
+                $('pesertaCount').textContent = '0';
+                return;
+            }
+            
+            // Call RPC function
+            const { data, error } = await db.rpc('get_peserta_count', { 
+                p_wilayah_id: parseInt(wilayahId),
+                p_jenjang_id: jenjangId ? parseInt(jenjangId) : null
+            });
+            
+            $('pesertaCount').textContent = data || 0;
+        }
+        
+        // ==================== CRUD PENGAJIAN ====================
         
         function showAddModal() {
             editMode = false;
             $('modalTitle').textContent = 'Buat Pengajian';
             $('pengajianForm').reset();
             $('pengajianId').value = '';
+            
+            // Default to kelompok
+            document.querySelector('input[name="tingkat_wilayah"][value="kelompok"]').checked = true;
+            onTingkatChange();
+            
             // Set default date to today
             $('pengajianForm').querySelector('[name="tanggal"]').value = new Date().toISOString().split('T')[0];
+            
+            $('pesertaCount').textContent = '0';
             showModal('pengajianModal');
         }
         
         async function editPengajian(id) {
-            try {
-                const { data, error } = await db.from('pengajian').select('*').eq('id', id).single();
-                if (error) throw error;
-                
-                editMode = true;
-                $('modalTitle').textContent = 'Edit Pengajian';
-                $('pengajianId').value = data.id;
-                setFormData('pengajianForm', data);
-                showModal('pengajianModal');
-            } catch (error) {
-                showToast('Gagal memuat data', 'error');
+            const { data, error } = await db.from('pengajian').select('*').eq('id', id).single();
+            if (error || !data) {
+                showToast('Data tidak ditemukan', 'error');
+                return;
             }
+            
+            editMode = true;
+            $('modalTitle').textContent = 'Edit Pengajian';
+            $('pengajianId').value = data.id;
+            
+            // Get wilayah info
+            const wilayah = allWilayah.find(w => w.id === data.wilayah_id);
+            if (wilayah) {
+                document.querySelector(`input[name="tingkat_wilayah"][value="${wilayah.tingkat}"]`).checked = true;
+                onTingkatChange();
+                
+                if (wilayah.tingkat === 'kelompok') {
+                    const desa = allWilayah.find(w => w.id === wilayah.parent_id);
+                    if (desa) {
+                        $('selectDaerah').value = desa.parent_id;
+                        onDaerahChange();
+                        $('selectDesa').value = desa.id;
+                        onDesaChange();
+                    }
+                    $('selectKelompok').value = wilayah.id;
+                } else if (wilayah.tingkat === 'desa') {
+                    $('selectDaerah').value = wilayah.parent_id;
+                    onDaerahChange();
+                    $('selectDesa').value = wilayah.id;
+                } else {
+                    $('selectDaerah').value = wilayah.id;
+                }
+            }
+            
+            $('selectJenjang').value = data.jenjang_id || '';
+            $('pengajianForm').querySelector('[name="tanggal"]').value = data.tanggal;
+            $('pengajianForm').querySelector('[name="jam_mulai"]').value = data.jam_mulai || '';
+            $('pengajianForm').querySelector('[name="jam_selesai"]').value = data.jam_selesai || '';
+            $('selectMubaligh').value = data.mubaligh_id || '';
+            $('pengajianForm').querySelector('[name="materi"]').value = data.materi || '';
+            
+            updatePesertaCount();
+            showModal('pengajianModal');
         }
         
         async function savePengajian() {
-            const form = $('pengajianForm');
-            if (!form.checkValidity()) { form.reportValidity(); return; }
+            const tingkat = document.querySelector('input[name="tingkat_wilayah"]:checked').value;
+            let wilayahId;
             
-            const btn = $('btnSave');
-            btn.disabled = true;
+            if (tingkat === 'daerah') wilayahId = $('selectDaerah').value;
+            else if (tingkat === 'desa') wilayahId = $('selectDesa').value;
+            else wilayahId = $('selectKelompok').value;
+            
+            if (!wilayahId) {
+                showToast('Pilih wilayah terlebih dahulu', 'error');
+                return;
+            }
+            
+            const form = $('pengajianForm');
+            const tanggal = form.querySelector('[name="tanggal"]').value;
+            if (!tanggal) {
+                showToast('Tanggal wajib diisi', 'error');
+                return;
+            }
+            
+            const mubalighId = $('selectMubaligh').value;
+            if (tingkat === 'kelompok' && !mubalighId) {
+                showToast('Mubaligh wajib diisi untuk pengajian di Kelompok', 'error');
+                return;
+            }
+            
+            const payload = {
+                wilayah_id: parseInt(wilayahId),
+                jenjang_id: $('selectJenjang').value ? parseInt($('selectJenjang').value) : null,
+                tanggal: tanggal,
+                jam_mulai: form.querySelector('[name="jam_mulai"]').value || null,
+                jam_selesai: form.querySelector('[name="jam_selesai"]').value || null,
+                mubaligh_id: mubalighId ? parseInt(mubalighId) : null,
+                materi: form.querySelector('[name="materi"]').value || null,
+                jenis: tingkat // store tingkat as jenis
+            };
             
             try {
-                const formData = getFormData('pengajianForm');
-                const pengajianData = {
-                    jenis: formData.jenis,
-                    wilayah_id: formData.wilayah_id,
-                    tanggal: formData.tanggal,
-                    waktu_mulai: formData.waktu_mulai,
-                    mubaligh_id: formData.mubaligh_id || null,
-                    materi: formData.materi
-                };
-                
-                if (editMode && formData.id) {
-                    await db.from('pengajian').update(pengajianData).eq('id', formData.id);
+                if (editMode) {
+                    await db.from('pengajian').update(payload).eq('id', $('pengajianId').value);
+                    showToast('Pengajian berhasil diupdate', 'success');
                 } else {
-                    pengajianData.created_by = currentUserData?.id;
-                    await db.from('pengajian').insert(pengajianData);
+                    await db.from('pengajian').insert(payload);
+                    showToast('Pengajian berhasil dibuat', 'success');
                 }
                 
-                showToast('Pengajian berhasil disimpan', 'success');
                 hideModal('pengajianModal');
-                loadPengajian();
+                await loadPengajian();
+                await loadStats();
             } catch (error) {
                 showToast('Gagal menyimpan: ' + error.message, 'error');
-            } finally {
-                btn.disabled = false;
             }
         }
         
         async function deletePengajian(id) {
             if (!await confirmDialog('Yakin ingin menghapus pengajian ini?')) return;
+            
             try {
-                await db.from('keaktifan_pengajian').delete().eq('pengajian_id', id);
                 await db.from('pengajian').delete().eq('id', id);
                 showToast('Pengajian berhasil dihapus', 'success');
-                loadPengajian();
+                await loadPengajian();
+                await loadStats();
             } catch (error) {
                 showToast('Gagal menghapus', 'error');
+            }
+        }
+        
+        // ==================== JADWAL RUTIN ====================
+        
+        async function showJadwalModal() {
+            await loadJadwalList();
+            hideJadwalForm();
+            showModal('jadwalModal');
+        }
+        
+        async function loadJadwalList() {
+            const { data, error } = await db.from('jadwal_pengajian')
+                .select('*, wilayah:wilayah_id(nama, tingkat), jenjang:jenjang_id(nama), mubaligh:mubaligh_id(nama)')
+                .order('nama');
+            
+            allJadwal = data || [];
+            
+            if (allJadwal.length === 0) {
+                $('jadwalList').innerHTML = '<p class="text-muted text-center">Belum ada jadwal rutin</p>';
+                return;
+            }
+            
+            $('jadwalList').innerHTML = `
+                <table class="table">
+                    <thead><tr><th>Nama</th><th>Wilayah</th><th>Jadwal</th><th>Waktu</th><th>Status</th><th>Aksi</th></tr></thead>
+                    <tbody>
+                        ${allJadwal.map(j => `
+                            <tr>
+                                <td><strong>${j.nama}</strong><br><small class="text-muted">${j.jenjang?.nama || 'Semua Jenjang'}</small></td>
+                                <td>${j.wilayah?.nama || '-'}</td>
+                                <td><span class="jadwal-badge jadwal-${j.jadwal_tipe}">${getJadwalText(j)}</span></td>
+                                <td>${j.jam_mulai ? j.jam_mulai.substring(0,5) : '-'}</td>
+                                <td><span class="badge ${j.is_aktif ? 'badge-success' : 'badge-secondary'}">${j.is_aktif ? 'Aktif' : 'Nonaktif'}</span></td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-success" onclick="generateFromJadwal(${j.id})" title="Generate Pengajian">📅</button>
+                                        <button class="btn btn-sm btn-outline" onclick="editJadwal(${j.id})">✏️</button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteJadwal(${j.id})">🗑️</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        function showAddJadwalForm() {
+            $('jadwalFormTitle').textContent = 'Tambah Jadwal Baru';
+            $('jadwalForm').reset();
+            $('jadwalId').value = '';
+            $('jadwalFormContainer').style.display = 'block';
+            onJadwalTipeChange();
+        }
+        
+        function hideJadwalForm() {
+            $('jadwalFormContainer').style.display = 'none';
+        }
+        
+        function onJadwalTipeChange() {
+            const tipe = $('jadwalTipe').value;
+            $('groupJadwalHari').style.display = tipe === 'mingguan' ? 'block' : 'none';
+            $('groupJadwalTanggal').style.display = ['bulanan', '3bulanan'].includes(tipe) ? 'block' : 'none';
+            $('groupJadwalBulan').style.display = tipe === '3bulanan' ? 'block' : 'none';
+        }
+        
+        async function editJadwal(id) {
+            const jadwal = allJadwal.find(j => j.id === id);
+            if (!jadwal) return;
+            
+            $('jadwalFormTitle').textContent = 'Edit Jadwal';
+            $('jadwalId').value = jadwal.id;
+            $('jadwalForm').querySelector('[name="nama"]').value = jadwal.nama;
+            $('jadwalWilayah').value = jadwal.wilayah_id;
+            $('jadwalJenjang').value = jadwal.jenjang_id || '';
+            $('jadwalTipe').value = jadwal.jadwal_tipe;
+            onJadwalTipeChange();
+            $('jadwalHari').value = jadwal.jadwal_hari || 0;
+            $('jadwalTanggal').value = jadwal.jadwal_tanggal || 1;
+            $('jadwalBulan').value = jadwal.jadwal_bulan || 1;
+            $('jadwalForm').querySelector('[name="jam_mulai"]').value = jadwal.jam_mulai || '';
+            $('jadwalForm').querySelector('[name="jam_selesai"]').value = jadwal.jam_selesai || '';
+            $('jadwalMubaligh').value = jadwal.mubaligh_id || '';
+            
+            $('jadwalFormContainer').style.display = 'block';
+        }
+        
+        async function saveJadwal() {
+            const form = $('jadwalForm');
+            const nama = form.querySelector('[name="nama"]').value;
+            const wilayahId = $('jadwalWilayah').value;
+            
+            if (!nama || !wilayahId) {
+                showToast('Nama dan Wilayah wajib diisi', 'error');
+                return;
+            }
+            
+            const payload = {
+                nama: nama,
+                wilayah_id: parseInt(wilayahId),
+                jenjang_id: $('jadwalJenjang').value ? parseInt($('jadwalJenjang').value) : null,
+                jadwal_tipe: $('jadwalTipe').value,
+                jadwal_hari: $('jadwalTipe').value === 'mingguan' ? parseInt($('jadwalHari').value) : null,
+                jadwal_tanggal: ['bulanan', '3bulanan'].includes($('jadwalTipe').value) ? parseInt($('jadwalTanggal').value) : null,
+                jadwal_bulan: $('jadwalTipe').value === '3bulanan' ? parseInt($('jadwalBulan').value) : null,
+                jam_mulai: form.querySelector('[name="jam_mulai"]').value || null,
+                jam_selesai: form.querySelector('[name="jam_selesai"]').value || null,
+                mubaligh_id: $('jadwalMubaligh').value ? parseInt($('jadwalMubaligh').value) : null,
+                is_aktif: true
+            };
+            
+            try {
+                const jadwalId = $('jadwalId').value;
+                if (jadwalId) {
+                    await db.from('jadwal_pengajian').update(payload).eq('id', jadwalId);
+                    showToast('Jadwal berhasil diupdate', 'success');
+                } else {
+                    await db.from('jadwal_pengajian').insert(payload);
+                    showToast('Jadwal berhasil ditambahkan', 'success');
+                }
+                
+                await loadJadwalList();
+                await loadStats();
+                hideJadwalForm();
+            } catch (error) {
+                showToast('Gagal menyimpan: ' + error.message, 'error');
+            }
+        }
+        
+        async function deleteJadwal(id) {
+            if (!await confirmDialog('Yakin ingin menghapus jadwal ini?')) return;
+            
+            try {
+                await db.from('jadwal_pengajian').delete().eq('id', id);
+                showToast('Jadwal berhasil dihapus', 'success');
+                await loadJadwalList();
+                await loadStats();
+            } catch (error) {
+                showToast('Gagal menghapus', 'error');
+            }
+        }
+        
+        async function generateFromJadwal(jadwalId) {
+            const jadwal = allJadwal.find(j => j.id === jadwalId);
+            if (!jadwal) return;
+            
+            const bulan = prompt('Generate pengajian untuk bulan (format: 2024-01):', 
+                new Date().toISOString().substring(0,7));
+            if (!bulan) return;
+            
+            const [year, month] = bulan.split('-').map(Number);
+            const dates = getJadwalDates(jadwal, year, month);
+            
+            if (dates.length === 0) {
+                showToast('Tidak ada tanggal yang sesuai', 'warning');
+                return;
+            }
+            
+            if (!await confirmDialog(`Akan dibuat ${dates.length} pengajian untuk bulan ${bulan}. Lanjutkan?`)) return;
+            
+            try {
+                const pengajianList = dates.map(tanggal => ({
+                    wilayah_id: jadwal.wilayah_id,
+                    jenjang_id: jadwal.jenjang_id,
+                    tanggal: tanggal,
+                    jam_mulai: jadwal.jam_mulai,
+                    jam_selesai: jadwal.jam_selesai,
+                    mubaligh_id: jadwal.mubaligh_id,
+                    jadwal_tipe: jadwal.jadwal_tipe,
+                    jadwal_hari: jadwal.jadwal_hari,
+                    jadwal_tanggal: jadwal.jadwal_tanggal,
+                    materi: `[Auto] ${jadwal.nama}`,
+                    jenis: jadwal.wilayah?.tingkat || 'kelompok'
+                }));
+                
+                await db.from('pengajian').insert(pengajianList);
+                showToast(`${dates.length} pengajian berhasil dibuat`, 'success');
+                hideModal('jadwalModal');
+                await loadPengajian();
+                await loadStats();
+            } catch (error) {
+                showToast('Gagal generate: ' + error.message, 'error');
+            }
+        }
+        
+        function getJadwalDates(jadwal, year, month) {
+            const dates = [];
+            const daysInMonth = new Date(year, month, 0).getDate();
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month - 1, day);
+                const dayOfWeek = date.getDay();
+                
+                let match = false;
+                switch (jadwal.jadwal_tipe) {
+                    case 'harian':
+                        match = true;
+                        break;
+                    case 'mingguan':
+                        match = dayOfWeek === jadwal.jadwal_hari;
+                        break;
+                    case 'bulanan':
+                        match = day === jadwal.jadwal_tanggal;
+                        break;
+                    case '3bulanan':
+                        match = day === jadwal.jadwal_tanggal && 
+                                [jadwal.jadwal_bulan, jadwal.jadwal_bulan + 3, jadwal.jadwal_bulan + 6, jadwal.jadwal_bulan + 9]
+                                .map(m => ((m - 1) % 12) + 1).includes(month);
+                        break;
+                }
+                
+                if (match) {
+                    dates.push(date.toISOString().split('T')[0]);
+                }
+            }
+            
+            return dates;
+        }
+        
+        // ==================== PESERTA ====================
+        
+        async function showPeserta(wilayahId, jenjangId) {
+            $('pesertaList').innerHTML = '<p class="text-muted text-center">Memuat...</p>';
+            showModal('pesertaModal');
+            
+            try {
+                const { data, error } = await db.rpc('get_peserta_list', {
+                    p_wilayah_id: wilayahId,
+                    p_jenjang_id: jenjangId
+                });
+                
+                if (!data || data.length === 0) {
+                    $('pesertaList').innerHTML = '<p class="text-muted text-center">Tidak ada peserta</p>';
+                    return;
+                }
+                
+                $('pesertaList').innerHTML = `
+                    <p class="mb-md"><strong>${data.length}</strong> peserta</p>
+                    <table class="table">
+                        <thead><tr><th>No</th><th>Nama</th><th>Jenjang</th><th>Kelompok</th></tr></thead>
+                        <tbody>
+                            ${data.map((p, i) => `
+                                <tr>
+                                    <td>${i+1}</td>
+                                    <td>${p.santri_nama}</td>
+                                    <td><span class="badge badge-info">${p.jenjang_nama}</span></td>
+                                    <td>${p.kelompok_nama}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                $('pesertaList').innerHTML = `<p class="text-danger">Error: ${error.message}</p>`;
             }
         }
     </script>
