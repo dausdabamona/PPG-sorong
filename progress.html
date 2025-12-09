@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Hafalan - PPG Sorong</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">PPG</div>
+                <div><div class="sidebar-title">PPG Sorong</div><div class="sidebar-subtitle">Pembinaan Generasi Penerus</div></div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">Menu Utama</div>
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span>Dashboard</span></a>
+                <a href="santri.html" class="nav-item"><span class="nav-icon">👥</span><span>Data Santri</span></a>
+                <a href="pengajian.html" class="nav-item"><span class="nav-icon">📖</span><span>Pengajian</span></a>
+                <a href="presensi.html" class="nav-item"><span class="nav-icon">✅</span><span>Presensi</span></a>
+                <a href="progress.html" class="nav-item active"><span class="nav-icon">📈</span><span>Progress Hafalan</span></a>
+                <div class="nav-section">Laporan</div>
+                <a href="rapor.html" class="nav-item"><span class="nav-icon">📋</span><span>Rapor</span></a>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left"><h1 class="header-title">Progress Hafalan</h1></div>
+                <div class="header-right">
+                    <div class="user-menu">
+                        <div class="user-avatar" id="userAvatar">?</div>
+                        <div class="user-info"><div class="user-name" id="userName">Loading...</div><div class="user-role" id="userRole">-</div></div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="logout()">Keluar</button>
+                </div>
+            </header>
+            
+            <div class="page-content">
+                <div class="page-header">
+                    <div>
+                        <div class="breadcrumb"><a href="dashboard.html">Dashboard</a><span>/</span><span>Progress Hafalan</span></div>
+                        <h2 class="page-title">Input Progress Hafalan</h2>
+                    </div>
+                </div>
+                
+                <!-- Select Santri -->
+                <div class="card mb-lg">
+                    <div class="card-header"><h3 class="card-title">Pilih Santri</h3></div>
+                    <div class="card-body">
+                        <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
+                            <div style="flex:1;min-width:250px;">
+                                <label class="form-label">Santri</label>
+                                <select class="form-control" id="selectSantri" onchange="loadProgress()">
+                                    <option value="">-- Pilih Santri --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Kategori</label>
+                                <select class="form-control" id="selectKategori" onchange="loadProgress()">
+                                    <option value="">-- Semua Kategori --</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="santriInfo" class="mt-lg" style="display:none;">
+                            <div style="background:var(--gray-100);padding:1rem;border-radius:var(--radius-md);">
+                                <div style="display:flex;flex-wrap:wrap;gap:1.5rem;">
+                                    <div><strong>Nama:</strong> <span id="infoNama">-</span></div>
+                                    <div><strong>Jenjang:</strong> <span id="infoJenjang">-</span></div>
+                                    <div><strong>Kelompok:</strong> <span id="infoKelompok">-</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Summary -->
+                <div class="stats-grid mb-lg" id="summaryStats" style="display:none;">
+                    <div class="stat-card">
+                        <div class="stat-icon success">✅</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="statSelesai">0</div>
+                            <div class="stat-label">Selesai</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon warning">⏳</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="statProses">0</div>
+                            <div class="stat-label">Proses</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon secondary">⬜</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="statBelum">0</div>
+                            <div class="stat-label">Belum</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Table -->
+                <div class="card" id="progressCard" style="display:none;">
+                    <div class="card-header">
+                        <h3 class="card-title">Daftar Materi</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table" id="progressTable">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Materi</th>
+                                        <th>Kategori</th>
+                                        <th>Status</th>
+                                        <th>Nilai</th>
+                                        <th>Tanggal Selesai</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal Input Progress -->
+    <div class="modal" id="progressModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Input Progress</h3>
+                <button class="modal-close" onclick="hideModal('progressModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="progressForm">
+                    <input type="hidden" name="santri_id" id="inputSantriId">
+                    <input type="hidden" name="materi_item_id" id="inputMateriId">
+                    
+                    <div class="form-group">
+                        <label class="form-label">Materi</label>
+                        <input type="text" class="form-control" id="inputMateriNama" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label required">Status</label>
+                        <select class="form-control" name="status" required>
+                            <option value="belum">Belum</option>
+                            <option value="proses">Proses</option>
+                            <option value="selesai">Selesai</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Nilai (0-100)</label>
+                        <input type="number" class="form-control" name="nilai" min="0" max="100">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Tanggal Selesai</label>
+                        <input type="date" class="form-control" name="tanggal_selesai">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Catatan</label>
+                        <textarea class="form-control" name="catatan" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('progressModal')">Batal</button>
+                <button class="btn btn-primary" onclick="saveProgress()" id="btnSaveProgress">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    
+    <script>
+        let currentSantri = null;
+        let materiList = [];
+        let progressData = {};
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!await requireAuth()) return;
+            updateUserUI();
+            await loadSantriList();
+            await loadKategoriList();
+        });
+        
+        function updateUserUI() {
+            if (currentUserData) {
+                $('userName').textContent = currentUserData.nama || currentUserData.email;
+                $('userAvatar').textContent = (currentUserData.nama || 'U').charAt(0).toUpperCase();
+                if (userRoles.length > 0) $('userRole').textContent = userRoles[0].role?.nama || '-';
+            }
+        }
+        
+        async function loadSantriList() {
+            try {
+                const { data } = await db.from('santri')
+                    .select('id, nama')
+                    .eq('status', 'aktif')
+                    .order('nama');
+                
+                const select = $('selectSantri');
+                data?.forEach(s => {
+                    select.innerHTML += `<option value="${s.id}">${s.nama}</option>`;
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        async function loadKategoriList() {
+            try {
+                const { data } = await db.from('kategori_materi')
+                    .select('id, nama')
+                    .eq('is_aktif', true)
+                    .order('urutan');
+                
+                const select = $('selectKategori');
+                data?.forEach(k => {
+                    select.innerHTML += `<option value="${k.id}">${k.nama}</option>`;
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        async function loadProgress() {
+            const santriId = $('selectSantri').value;
+            const kategoriId = $('selectKategori').value;
+            
+            if (!santriId) {
+                $('santriInfo').style.display = 'none';
+                $('summaryStats').style.display = 'none';
+                $('progressCard').style.display = 'none';
+                return;
+            }
+            
+            try {
+                // Get santri info
+                const { data: santri } = await db.from('santri')
+                    .select('*, enrollment(jenjang:jenjang_id(nama), wilayah:wilayah_id(nama))')
+                    .eq('id', santriId)
+                    .single();
+                
+                currentSantri = santri;
+                const enrollment = santri.enrollment?.[0];
+                
+                $('santriInfo').style.display = 'block';
+                $('infoNama').textContent = santri.nama;
+                $('infoJenjang').textContent = enrollment?.jenjang?.nama || '-';
+                $('infoKelompok').textContent = enrollment?.wilayah?.nama || '-';
+                
+                // Get materi items
+                let materiQuery = db.from('materi_item')
+                    .select('*, kategori:kategori_id(nama)')
+                    .order('tipe')
+                    .order('nomor');
+                
+                if (kategoriId) {
+                    materiQuery = materiQuery.eq('kategori_id', kategoriId);
+                }
+                
+                const { data: materi } = await materiQuery;
+                materiList = materi || [];
+                
+                // Get existing progress
+                const { data: progress } = await db.from('progress_santri')
+                    .select('*')
+                    .eq('santri_id', santriId);
+                
+                progressData = {};
+                progress?.forEach(p => {
+                    progressData[p.materi_item_id] = p;
+                });
+                
+                // Calculate summary
+                let selesai = 0, proses = 0, belum = 0;
+                materiList.forEach(m => {
+                    const p = progressData[m.id];
+                    if (p?.status === 'selesai') selesai++;
+                    else if (p?.status === 'proses') proses++;
+                    else belum++;
+                });
+                
+                $('statSelesai').textContent = selesai;
+                $('statProses').textContent = proses;
+                $('statBelum').textContent = belum;
+                $('summaryStats').style.display = 'grid';
+                
+                renderProgressTable();
+                $('progressCard').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Gagal memuat data', 'error');
+            }
+        }
+        
+        function renderProgressTable() {
+            const tbody = $$('#progressTable tbody');
+            
+            if (materiList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Tidak ada data materi</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = materiList.map((m, i) => {
+                const p = progressData[m.id];
+                const status = p?.status || 'belum';
+                const statusBadge = {
+                    'selesai': 'badge-success',
+                    'proses': 'badge-warning',
+                    'belum': 'badge-secondary'
+                };
+                
+                return `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td><strong>${m.nama}</strong></td>
+                    <td>${m.kategori?.nama || '-'}</td>
+                    <td><span class="badge ${statusBadge[status]}">${status}</span></td>
+                    <td>${p?.nilai || '-'}</td>
+                    <td>${p?.tanggal_selesai ? formatTanggalSingkat(p.tanggal_selesai) : '-'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="showProgressModal(${m.id}, '${m.nama.replace(/'/g, "\\'")}')">
+                            ✏️ Input
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+        
+        function showProgressModal(materiId, materiNama) {
+            if (!currentSantri) return;
+            
+            const existing = progressData[materiId];
+            
+            $('inputSantriId').value = currentSantri.id;
+            $('inputMateriId').value = materiId;
+            $('inputMateriNama').value = materiNama;
+            
+            const form = $('progressForm');
+            form.querySelector('[name="status"]').value = existing?.status || 'belum';
+            form.querySelector('[name="nilai"]').value = existing?.nilai || '';
+            form.querySelector('[name="tanggal_selesai"]').value = existing?.tanggal_selesai || '';
+            form.querySelector('[name="catatan"]').value = existing?.catatan || '';
+            
+            showModal('progressModal');
+        }
+        
+        async function saveProgress() {
+            const btn = $('btnSaveProgress');
+            btn.disabled = true;
+            
+            try {
+                const formData = getFormData('progressForm');
+                const data = {
+                    santri_id: parseInt(formData.santri_id),
+                    materi_item_id: parseInt(formData.materi_item_id),
+                    status: formData.status,
+                    nilai: formData.nilai ? parseFloat(formData.nilai) : null,
+                    tanggal_selesai: formData.tanggal_selesai || null,
+                    catatan: formData.catatan,
+                    penguji_id: currentUserData?.id
+                };
+                
+                // Upsert
+                const { error } = await db.from('progress_santri').upsert(data, {
+                    onConflict: 'santri_id,materi_item_id'
+                });
+                
+                if (error) throw error;
+                
+                showToast('Progress berhasil disimpan', 'success');
+                hideModal('progressModal');
+                loadProgress();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Gagal menyimpan: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

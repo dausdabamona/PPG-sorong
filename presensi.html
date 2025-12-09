@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presensi - PPG Sorong</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">PPG</div>
+                <div><div class="sidebar-title">PPG Sorong</div><div class="sidebar-subtitle">Pembinaan Generasi Penerus</div></div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">Menu Utama</div>
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span>Dashboard</span></a>
+                <a href="santri.html" class="nav-item"><span class="nav-icon">👥</span><span>Data Santri</span></a>
+                <a href="pengajian.html" class="nav-item"><span class="nav-icon">📖</span><span>Pengajian</span></a>
+                <a href="presensi.html" class="nav-item active"><span class="nav-icon">✅</span><span>Presensi</span></a>
+                <a href="progress.html" class="nav-item"><span class="nav-icon">📈</span><span>Progress Hafalan</span></a>
+                <div class="nav-section">Laporan</div>
+                <a href="rapor.html" class="nav-item"><span class="nav-icon">📋</span><span>Rapor</span></a>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left"><h1 class="header-title">Input Presensi</h1></div>
+                <div class="header-right">
+                    <div class="user-menu">
+                        <div class="user-avatar" id="userAvatar">?</div>
+                        <div class="user-info"><div class="user-name" id="userName">Loading...</div><div class="user-role" id="userRole">-</div></div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="logout()">Keluar</button>
+                </div>
+            </header>
+            
+            <div class="page-content">
+                <div class="page-header">
+                    <div>
+                        <div class="breadcrumb"><a href="dashboard.html">Dashboard</a><span>/</span><span>Presensi</span></div>
+                        <h2 class="page-title">Input Presensi Pengajian</h2>
+                    </div>
+                </div>
+                
+                <!-- Select Pengajian -->
+                <div class="card mb-lg">
+                    <div class="card-header"><h3 class="card-title">Pilih Pengajian</h3></div>
+                    <div class="card-body">
+                        <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
+                            <div style="flex:1;min-width:250px;">
+                                <label class="form-label">Pengajian</label>
+                                <select class="form-control" id="selectPengajian" onchange="loadPresensi()">
+                                    <option value="">-- Pilih Pengajian --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <a href="pengajian.html?action=add" class="btn btn-outline">➕ Buat Pengajian Baru</a>
+                            </div>
+                        </div>
+                        
+                        <div id="pengajianInfo" class="mt-lg" style="display:none;">
+                            <div style="background:var(--gray-100);padding:1rem;border-radius:var(--radius-md);">
+                                <div style="display:flex;flex-wrap:wrap;gap:1.5rem;">
+                                    <div><strong>Tanggal:</strong> <span id="infoTanggal">-</span></div>
+                                    <div><strong>Jenis:</strong> <span id="infoJenis">-</span></div>
+                                    <div><strong>Kelompok:</strong> <span id="infoKelompok">-</span></div>
+                                    <div><strong>Mubaligh:</strong> <span id="infoMubaligh">-</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Presensi Form -->
+                <div class="card" id="presensiCard" style="display:none;">
+                    <div class="card-header">
+                        <h3 class="card-title">Daftar Hadir</h3>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-success" onclick="setAllStatus('hadir')">✅ Semua Hadir</button>
+                            <button class="btn btn-sm btn-secondary" onclick="setAllStatus('alpa')">❌ Semua Alpa</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table" id="presensiTable">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Nama Santri</th>
+                                        <th>Jenjang</th>
+                                        <th style="text-align:center;">Hadir</th>
+                                        <th style="text-align:center;">Izin</th>
+                                        <th style="text-align:center;">Sakit</th>
+                                        <th style="text-align:center;">Alpa</th>
+                                        <th>Keterangan</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary btn-lg" onclick="savePresensi()" id="btnSave">💾 Simpan Presensi</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    
+    <script>
+        let currentPengajian = null;
+        let santriList = [];
+        let existingPresensi = {};
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!await requireAuth()) return;
+            updateUserUI();
+            await loadPengajianList();
+            
+            // Check URL param
+            const pengajianId = getUrlParam('pengajian_id');
+            if (pengajianId) {
+                $('selectPengajian').value = pengajianId;
+                loadPresensi();
+            }
+        });
+        
+        function updateUserUI() {
+            if (currentUserData) {
+                $('userName').textContent = currentUserData.nama || currentUserData.email;
+                $('userAvatar').textContent = (currentUserData.nama || 'U').charAt(0).toUpperCase();
+                if (userRoles.length > 0) $('userRole').textContent = userRoles[0].role?.nama || '-';
+            }
+        }
+        
+        async function loadPengajianList() {
+            try {
+                // Load pengajian from last 30 days
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                
+                const { data, error } = await db.from('pengajian')
+                    .select('id, tanggal, jenis, wilayah:wilayah_id(nama)')
+                    .gte('tanggal', thirtyDaysAgo.toISOString().split('T')[0])
+                    .order('tanggal', { ascending: false });
+                
+                if (error) throw error;
+                
+                const select = $('selectPengajian');
+                data?.forEach(p => {
+                    select.innerHTML += `<option value="${p.id}">${formatTanggalSingkat(p.tanggal)} - ${p.jenis} - ${p.wilayah?.nama || '-'}</option>`;
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        async function loadPresensi() {
+            const pengajianId = $('selectPengajian').value;
+            if (!pengajianId) {
+                $('pengajianInfo').style.display = 'none';
+                $('presensiCard').style.display = 'none';
+                return;
+            }
+            
+            try {
+                // Get pengajian detail
+                const { data: pengajian } = await db.from('pengajian')
+                    .select('*, wilayah:wilayah_id(id, nama), mubaligh:mubaligh_id(nama)')
+                    .eq('id', pengajianId)
+                    .single();
+                
+                if (!pengajian) return;
+                currentPengajian = pengajian;
+                
+                // Show info
+                $('pengajianInfo').style.display = 'block';
+                $('infoTanggal').textContent = formatTanggal(pengajian.tanggal);
+                $('infoJenis').textContent = pengajian.jenis;
+                $('infoKelompok').textContent = pengajian.wilayah?.nama || '-';
+                $('infoMubaligh').textContent = pengajian.mubaligh?.nama || '-';
+                
+                // Get santri in this kelompok
+                const { data: enrollments } = await db.from('enrollment')
+                    .select('santri:santri_id(id, nama), jenjang:jenjang_id(nama)')
+                    .eq('wilayah_id', pengajian.wilayah.id)
+                    .eq('status', 'aktif');
+                
+                santriList = enrollments?.map(e => ({
+                    id: e.santri.id,
+                    nama: e.santri.nama,
+                    jenjang: e.jenjang?.nama
+                })) || [];
+                
+                // Get existing presensi
+                const { data: presensi } = await db.from('keaktifan_pengajian')
+                    .select('*')
+                    .eq('pengajian_id', pengajianId);
+                
+                existingPresensi = {};
+                presensi?.forEach(p => {
+                    existingPresensi[p.santri_id] = p;
+                });
+                
+                renderPresensiTable();
+                $('presensiCard').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Gagal memuat data', 'error');
+            }
+        }
+        
+        function renderPresensiTable() {
+            const tbody = $$('#presensiTable tbody');
+            
+            if (santriList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada santri di kelompok ini</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = santriList.map((s, i) => {
+                const existing = existingPresensi[s.id];
+                const status = existing?.status || 'hadir';
+                const keterangan = existing?.keterangan || '';
+                
+                return `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td><strong>${s.nama}</strong></td>
+                    <td>${s.jenjang || '-'}</td>
+                    <td style="text-align:center;">
+                        <input type="radio" name="status_${s.id}" value="hadir" ${status === 'hadir' ? 'checked' : ''}>
+                    </td>
+                    <td style="text-align:center;">
+                        <input type="radio" name="status_${s.id}" value="izin" ${status === 'izin' ? 'checked' : ''}>
+                    </td>
+                    <td style="text-align:center;">
+                        <input type="radio" name="status_${s.id}" value="sakit" ${status === 'sakit' ? 'checked' : ''}>
+                    </td>
+                    <td style="text-align:center;">
+                        <input type="radio" name="status_${s.id}" value="alpa" ${status === 'alpa' ? 'checked' : ''}>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control" name="keterangan_${s.id}" value="${keterangan}" placeholder="Opsional" style="width:150px;">
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+        
+        function setAllStatus(status) {
+            santriList.forEach(s => {
+                const radio = document.querySelector(`input[name="status_${s.id}"][value="${status}"]`);
+                if (radio) radio.checked = true;
+            });
+        }
+        
+        async function savePresensi() {
+            if (!currentPengajian) return;
+            
+            const btn = $('btnSave');
+            btn.disabled = true;
+            btn.textContent = 'Menyimpan...';
+            
+            try {
+                const presensiData = santriList.map(s => {
+                    const statusRadio = document.querySelector(`input[name="status_${s.id}"]:checked`);
+                    const keteranganInput = document.querySelector(`input[name="keterangan_${s.id}"]`);
+                    
+                    return {
+                        pengajian_id: currentPengajian.id,
+                        santri_id: s.id,
+                        status: statusRadio?.value || 'hadir',
+                        keterangan: keteranganInput?.value || null
+                    };
+                });
+                
+                // Delete existing and insert new
+                await db.from('keaktifan_pengajian').delete().eq('pengajian_id', currentPengajian.id);
+                
+                const { error } = await db.from('keaktifan_pengajian').insert(presensiData);
+                if (error) throw error;
+                
+                showToast('Presensi berhasil disimpan', 'success');
+                
+                // Reload to refresh existing data
+                await loadPresensi();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Gagal menyimpan: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '💾 Simpan Presensi';
+            }
+        }
+    </script>
+</body>
+</html>

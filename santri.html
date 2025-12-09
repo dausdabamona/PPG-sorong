@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Santri - PPG Sorong</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">PPG</div>
+                <div>
+                    <div class="sidebar-title">PPG Sorong</div>
+                    <div class="sidebar-subtitle">Pembinaan Generasi Penerus</div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">Menu Utama</div>
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span>Dashboard</span></a>
+                <a href="santri.html" class="nav-item active"><span class="nav-icon">👥</span><span>Data Santri</span></a>
+                <a href="pengajian.html" class="nav-item"><span class="nav-icon">📖</span><span>Pengajian</span></a>
+                <a href="presensi.html" class="nav-item"><span class="nav-icon">✅</span><span>Presensi</span></a>
+                <a href="progress.html" class="nav-item"><span class="nav-icon">📈</span><span>Progress Hafalan</span></a>
+                <div class="nav-section">Laporan</div>
+                <a href="rapor.html" class="nav-item"><span class="nav-icon">📋</span><span>Rapor</span></a>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left"><h1 class="header-title">Data Santri</h1></div>
+                <div class="header-right">
+                    <div class="user-menu">
+                        <div class="user-avatar" id="userAvatar">?</div>
+                        <div class="user-info">
+                            <div class="user-name" id="userName">Loading...</div>
+                            <div class="user-role" id="userRole">-</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="logout()">Keluar</button>
+                </div>
+            </header>
+            
+            <div class="page-content">
+                <div class="page-header">
+                    <div>
+                        <div class="breadcrumb"><a href="dashboard.html">Dashboard</a><span>/</span><span>Data Santri</span></div>
+                        <h2 class="page-title">Daftar Santri</h2>
+                    </div>
+                    <button class="btn btn-primary" onclick="showAddModal()">➕ Tambah Santri</button>
+                </div>
+                
+                <!-- Filters -->
+                <div class="card mb-lg">
+                    <div class="card-body">
+                        <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
+                            <div class="search-box">
+                                <span class="search-icon">🔍</span>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Cari nama..." onkeyup="debounceSearch()">
+                            </div>
+                            <div>
+                                <label class="form-label">Jenjang</label>
+                                <select class="form-control" id="filterJenjang" onchange="loadSantri()"><option value="">Semua</option></select>
+                            </div>
+                            <div>
+                                <label class="form-label">Status</label>
+                                <select class="form-control" id="filterStatus" onchange="loadSantri()">
+                                    <option value="aktif">Aktif</option>
+                                    <option value="">Semua</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-container">
+                            <table class="table" id="santriTable">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th>Nama</th>
+                                        <th>L/P</th>
+                                        <th>Umur</th>
+                                        <th>Jenjang</th>
+                                        <th>Kelompok</th>
+                                        <th>Status</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody><tr><td colspan="8" class="text-center text-muted py-4">Memuat data...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal Form Santri -->
+    <div class="modal" id="santriModal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3 id="modalTitle">Tambah Santri</h3>
+                <button class="modal-close" onclick="hideModal('santriModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="santriForm">
+                    <input type="hidden" id="santriId" name="id">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">Nama Lengkap</label>
+                            <input type="text" class="form-control" name="nama" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nama Panggilan</label>
+                            <input type="text" class="form-control" name="nama_panggilan">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Tempat Lahir</label>
+                            <input type="text" class="form-control" name="tempat_lahir">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tanggal Lahir</label>
+                            <input type="date" class="form-control" name="tanggal_lahir">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">Jenis Kelamin</label>
+                            <select class="form-control" name="jenis_kelamin" required>
+                                <option value="">-- Pilih --</option>
+                                <option value="L">Laki-laki</option>
+                                <option value="P">Perempuan</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">No. HP</label>
+                            <input type="tel" class="form-control" name="phone">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Alamat</label>
+                        <textarea class="form-control" name="alamat" rows="2"></textarea>
+                    </div>
+                    <hr style="margin:1.5rem 0;"><h4 style="margin-bottom:1rem;">Enrollment</h4>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">Kelompok</label>
+                            <select class="form-control" name="wilayah_id" id="selectKelompok" required><option value="">-- Pilih --</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Jenjang</label>
+                            <select class="form-control" name="jenjang_id" id="selectJenjang" required><option value="">-- Pilih --</option></select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('santriModal')">Batal</button>
+                <button class="btn btn-primary" onclick="saveSantri()" id="btnSave">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    
+    <script>
+        let editMode = false;
+        const debounceSearch = debounce(() => loadSantri(), 300);
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!await requireAuth()) return;
+            updateUserUI();
+            await loadFilters();
+            await loadSantri();
+            if (getUrlParam('action') === 'add') showAddModal();
+        });
+        
+        function updateUserUI() {
+            if (currentUserData) {
+                $('userName').textContent = currentUserData.nama || currentUserData.email;
+                $('userAvatar').textContent = (currentUserData.nama || 'U').charAt(0).toUpperCase();
+                if (userRoles.length > 0) $('userRole').textContent = userRoles[0].role?.nama || '-';
+            }
+        }
+        
+        async function loadFilters() {
+            try {
+                // Load jenjang
+                const { data: jenjang } = await db.from('jenjang').select('id, nama').order('urutan');
+                if (jenjang) {
+                    const select = $('filterJenjang');
+                    jenjang.forEach(j => {
+                        select.innerHTML += `<option value="${j.id}">${j.nama}</option>`;
+                    });
+                }
+                
+                // Load kelompok for form
+                const { data: kelompok } = await db.from('wilayah').select('id, nama').eq('tingkat', 'kelompok').order('nama');
+                if (kelompok) {
+                    const select = $('selectKelompok');
+                    kelompok.forEach(k => {
+                        select.innerHTML += `<option value="${k.id}">${k.nama}</option>`;
+                    });
+                }
+                
+                // Load jenjang for form
+                const { data: jenjangForm } = await db.from('jenjang').select('id, nama').eq('is_aktif', true).order('urutan');
+                if (jenjangForm) {
+                    const select = $('selectJenjang');
+                    jenjangForm.forEach(j => {
+                        select.innerHTML += `<option value="${j.id}">${j.nama}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading filters:', error);
+            }
+        }
+        
+        async function loadSantri() {
+            try {
+                const search = $('searchInput').value.trim();
+                const jenjangId = $('filterJenjang').value;
+                const status = $('filterStatus').value;
+                
+                let query = db.from('santri').select(`
+                    *,
+                    enrollment!inner(
+                        jenjang:jenjang_id(nama),
+                        wilayah:wilayah_id(nama),
+                        status
+                    )
+                `).order('nama');
+                
+                if (search) query = query.ilike('nama', `%${search}%`);
+                if (status) query = query.eq('status', status);
+                if (jenjangId) query = query.eq('enrollment.jenjang_id', jenjangId);
+                
+                const { data, error } = await query;
+                if (error) throw error;
+                
+                renderTable(data || []);
+            } catch (error) {
+                console.error('Error loading santri:', error);
+                showToast('Gagal memuat data santri', 'error');
+            }
+        }
+        
+        function renderTable(data) {
+            const tbody = $$('#santriTable tbody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.map((s, i) => {
+                const enrollment = s.enrollment?.[0] || {};
+                return `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td><strong>${s.nama}</strong>${s.nama_panggilan ? `<br><small class="text-muted">${s.nama_panggilan}</small>` : ''}</td>
+                    <td>${s.jenis_kelamin || '-'}</td>
+                    <td>${hitungUmur(s.tanggal_lahir)} th</td>
+                    <td>${enrollment.jenjang?.nama || '-'}</td>
+                    <td>${enrollment.wilayah?.nama || '-'}</td>
+                    <td><span class="badge ${s.status === 'aktif' ? 'badge-success' : 'badge-secondary'}">${s.status}</span></td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline" onclick="editSantri(${s.id})">✏️</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteSantri(${s.id})">🗑️</button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+        
+        function showAddModal() {
+            editMode = false;
+            $('modalTitle').textContent = 'Tambah Santri';
+            $('santriForm').reset();
+            $('santriId').value = '';
+            showModal('santriModal');
+        }
+        
+        async function editSantri(id) {
+            try {
+                const { data, error } = await db.from('santri').select(`*, enrollment(*)`).eq('id', id).single();
+                if (error) throw error;
+                
+                editMode = true;
+                $('modalTitle').textContent = 'Edit Santri';
+                $('santriId').value = data.id;
+                
+                // Set form values
+                const form = $('santriForm');
+                form.querySelector('[name="nama"]').value = data.nama || '';
+                form.querySelector('[name="nama_panggilan"]').value = data.nama_panggilan || '';
+                form.querySelector('[name="tempat_lahir"]').value = data.tempat_lahir || '';
+                form.querySelector('[name="tanggal_lahir"]').value = data.tanggal_lahir || '';
+                form.querySelector('[name="jenis_kelamin"]').value = data.jenis_kelamin || '';
+                form.querySelector('[name="phone"]').value = data.phone || '';
+                form.querySelector('[name="alamat"]').value = data.alamat || '';
+                
+                if (data.enrollment?.[0]) {
+                    form.querySelector('[name="wilayah_id"]').value = data.enrollment[0].wilayah_id || '';
+                    form.querySelector('[name="jenjang_id"]').value = data.enrollment[0].jenjang_id || '';
+                }
+                
+                showModal('santriModal');
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Gagal memuat data', 'error');
+            }
+        }
+        
+        async function saveSantri() {
+            const form = $('santriForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            const btn = $('btnSave');
+            btn.disabled = true;
+            btn.textContent = 'Menyimpan...';
+            
+            try {
+                const formData = getFormData('santriForm');
+                const santriData = {
+                    nama: formData.nama,
+                    nama_panggilan: formData.nama_panggilan,
+                    tempat_lahir: formData.tempat_lahir,
+                    tanggal_lahir: formData.tanggal_lahir,
+                    jenis_kelamin: formData.jenis_kelamin,
+                    phone: formData.phone,
+                    alamat: formData.alamat,
+                    status: 'aktif'
+                };
+                
+                let santriId = formData.id;
+                
+                if (editMode && santriId) {
+                    // Update
+                    const { error } = await db.from('santri').update(santriData).eq('id', santriId);
+                    if (error) throw error;
+                    
+                    // Update enrollment
+                    await db.from('enrollment').update({
+                        wilayah_id: formData.wilayah_id,
+                        jenjang_id: formData.jenjang_id
+                    }).eq('santri_id', santriId).eq('status', 'aktif');
+                    
+                } else {
+                    // Insert santri
+                    santriData.created_by = currentUserData?.id;
+                    const { data: newSantri, error } = await db.from('santri').insert(santriData).select().single();
+                    if (error) throw error;
+                    
+                    santriId = newSantri.id;
+                    
+                    // Get active tahun ajaran
+                    const { data: ta } = await db.from('tahun_ajaran').select('id').eq('is_aktif', true).single();
+                    
+                    // Insert enrollment
+                    await db.from('enrollment').insert({
+                        santri_id: santriId,
+                        wilayah_id: formData.wilayah_id,
+                        jenjang_id: formData.jenjang_id,
+                        tahun_ajaran_id: ta?.id || 1,
+                        status: 'aktif',
+                        created_by: currentUserData?.id
+                    });
+                }
+                
+                showToast('Data santri berhasil disimpan', 'success');
+                hideModal('santriModal');
+                loadSantri();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Gagal menyimpan data: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Simpan';
+            }
+        }
+        
+        async function deleteSantri(id) {
+            if (!await confirmDialog('Yakin ingin menghapus santri ini?')) return;
+            
+            try {
+                // Delete enrollment first
+                await db.from('enrollment').delete().eq('santri_id', id);
+                // Delete santri
+                const { error } = await db.from('santri').delete().eq('id', id);
+                if (error) throw error;
+                
+                showToast('Santri berhasil dihapus', 'success');
+                loadSantri();
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Gagal menghapus: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - PPG Sorong</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">PPG</div>
+                <div>
+                    <div class="sidebar-title">PPG Sorong</div>
+                    <div class="sidebar-subtitle">Pembinaan Generasi Penerus</div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">Menu Utama</div>
+                <a href="dashboard.html" class="nav-item active">
+                    <span class="nav-icon">📊</span>
+                    <span>Dashboard</span>
+                </a>
+                <a href="santri.html" class="nav-item">
+                    <span class="nav-icon">👥</span>
+                    <span>Data Santri</span>
+                </a>
+                <a href="pengajian.html" class="nav-item">
+                    <span class="nav-icon">📖</span>
+                    <span>Pengajian</span>
+                </a>
+                <a href="presensi.html" class="nav-item">
+                    <span class="nav-icon">✅</span>
+                    <span>Presensi</span>
+                </a>
+                <a href="progress.html" class="nav-item">
+                    <span class="nav-icon">📈</span>
+                    <span>Progress Hafalan</span>
+                </a>
+                
+                <div class="nav-section">Laporan</div>
+                <a href="rapor.html" class="nav-item">
+                    <span class="nav-icon">📋</span>
+                    <span>Rapor</span>
+                </a>
+                <a href="rekap.html" class="nav-item">
+                    <span class="nav-icon">📑</span>
+                    <span>Rekap Keaktifan</span>
+                </a>
+                
+                <div class="nav-section" id="adminMenu" style="display:none;">Pengaturan</div>
+                <a href="wilayah.html" class="nav-item admin-only" style="display:none;">
+                    <span class="nav-icon">🗺️</span>
+                    <span>Wilayah</span>
+                </a>
+                <a href="users.html" class="nav-item admin-only" style="display:none;">
+                    <span class="nav-icon">👤</span>
+                    <span>Pengguna</span>
+                </a>
+                <a href="master.html" class="nav-item admin-only" style="display:none;">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Master Data</span>
+                </a>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="btn btn-outline d-none" id="menuToggle" onclick="toggleSidebar()">☰</button>
+                    <h1 class="header-title">Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-menu" onclick="toggleUserDropdown()">
+                        <div class="user-avatar" id="userAvatar">?</div>
+                        <div class="user-info">
+                            <div class="user-name" id="userName">Loading...</div>
+                            <div class="user-role" id="userRole">-</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="logout()">Keluar</button>
+                </div>
+            </header>
+            
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon primary">👥</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalSantri">-</div>
+                            <div class="stat-label">Total Santri Aktif</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon success">📖</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalPengajian">-</div>
+                            <div class="stat-label">Pengajian Bulan Ini</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon warning">✅</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="avgKeaktifan">-</div>
+                            <div class="stat-label">Rata-rata Keaktifan</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon info">🏆</div>
+                        <div class="stat-content">
+                            <div class="stat-value" id="totalKhatam">-</div>
+                            <div class="stat-label">Hafal 30 Juz</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:1.5rem;">
+                    <!-- Santri per Jenjang -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Santri per Jenjang</h3>
+                        </div>
+                        <div class="card-body">
+                            <div id="jenjangStats">
+                                <p class="text-muted">Memuat data...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pengajian Terbaru -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Pengajian Terbaru</h3>
+                            <a href="pengajian.html" class="btn btn-sm btn-outline">Lihat Semua</a>
+                        </div>
+                        <div class="card-body">
+                            <div id="recentPengajian">
+                                <p class="text-muted">Memuat data...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Terbaru -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Progress Hafalan Terbaru</h3>
+                            <a href="progress.html" class="btn btn-sm btn-outline">Lihat Semua</a>
+                        </div>
+                        <div class="card-body">
+                            <div id="recentProgress">
+                                <p class="text-muted">Memuat data...</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Aksi Cepat</h3>
+                        </div>
+                        <div class="card-body">
+                            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                                <a href="santri.html?action=add" class="btn btn-primary">
+                                    ➕ Tambah Santri Baru
+                                </a>
+                                <a href="pengajian.html?action=add" class="btn btn-success">
+                                    📖 Buat Pengajian
+                                </a>
+                                <a href="presensi.html" class="btn btn-warning">
+                                    ✅ Input Presensi
+                                </a>
+                                <a href="progress.html?action=add" class="btn btn-info" style="background:var(--info);color:white;">
+                                    📈 Input Hafalan
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    
+    <script>
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check auth
+            const isLoggedIn = await requireAuth();
+            if (!isLoggedIn) return;
+            
+            // Update UI
+            updateUserUI();
+            
+            // Show admin menu if admin
+            if (isAdmin()) {
+                $('adminMenu').style.display = 'block';
+                $$$('.admin-only').forEach(el => el.style.display = 'flex');
+            }
+            
+            // Load dashboard data
+            await loadDashboardData();
+        });
+        
+        function updateUserUI() {
+            if (currentUserData) {
+                $('userName').textContent = currentUserData.nama || currentUserData.email;
+                $('userAvatar').textContent = (currentUserData.nama || 'U').charAt(0).toUpperCase();
+                
+                // Get primary role
+                if (userRoles.length > 0) {
+                    $('userRole').textContent = userRoles[0].role?.nama || '-';
+                }
+            }
+        }
+        
+        async function loadDashboardData() {
+            try {
+                // Total Santri Aktif
+                const { count: santriCount } = await db
+                    .from('santri')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('status', 'aktif');
+                $('totalSantri').textContent = formatAngka(santriCount || 0);
+                
+                // Pengajian bulan ini
+                const startOfMonth = new Date();
+                startOfMonth.setDate(1);
+                startOfMonth.setHours(0, 0, 0, 0);
+                
+                const { count: pengajianCount } = await db
+                    .from('pengajian')
+                    .select('*', { count: 'exact', head: true })
+                    .gte('tanggal', startOfMonth.toISOString().split('T')[0]);
+                $('totalPengajian').textContent = formatAngka(pengajianCount || 0);
+                
+                // Rata-rata keaktifan (placeholder)
+                $('avgKeaktifan').textContent = '-';
+                
+                // Total khatam (placeholder)
+                $('totalKhatam').textContent = '-';
+                
+                // Load jenjang stats
+                await loadJenjangStats();
+                
+                // Load recent pengajian
+                await loadRecentPengajian();
+                
+                // Load recent progress
+                await loadRecentProgress();
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showToast('Gagal memuat data dashboard', 'error');
+            }
+        }
+        
+        async function loadJenjangStats() {
+            try {
+                const { data: jenjangData } = await db
+                    .from('jenjang')
+                    .select('id, kode, nama')
+                    .order('urutan');
+                
+                if (!jenjangData) return;
+                
+                let html = '';
+                for (const jenjang of jenjangData) {
+                    // Count santri per jenjang
+                    const { count } = await db
+                        .from('enrollment')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('jenjang_id', jenjang.id)
+                        .eq('status', 'aktif');
+                    
+                    html += `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid var(--gray-200);">
+                            <span>${jenjang.nama}</span>
+                            <span class="badge badge-primary">${count || 0} santri</span>
+                        </div>
+                    `;
+                }
+                
+                $('jenjangStats').innerHTML = html || '<p class="text-muted">Belum ada data</p>';
+            } catch (error) {
+                console.error('Error loading jenjang stats:', error);
+            }
+        }
+        
+        async function loadRecentPengajian() {
+            try {
+                const { data } = await db
+                    .from('pengajian')
+                    .select(`
+                        *,
+                        wilayah:wilayah_id(nama),
+                        mubaligh:mubaligh_id(nama)
+                    `)
+                    .order('tanggal', { ascending: false })
+                    .limit(5);
+                
+                if (!data || data.length === 0) {
+                    $('recentPengajian').innerHTML = '<p class="text-muted">Belum ada pengajian</p>';
+                    return;
+                }
+                
+                let html = '';
+                for (const p of data) {
+                    html += `
+                        <div style="padding:0.75rem 0;border-bottom:1px solid var(--gray-200);">
+                            <div style="display:flex;justify-content:space-between;">
+                                <strong>${p.wilayah?.nama || '-'}</strong>
+                                <span class="badge ${p.jenis === 'masal' ? 'badge-primary' : 'badge-secondary'}">${p.jenis}</span>
+                            </div>
+                            <div class="text-sm text-muted mt-sm">
+                                ${formatTanggal(p.tanggal)} • ${p.mubaligh?.nama || '-'}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                $('recentPengajian').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading recent pengajian:', error);
+            }
+        }
+        
+        async function loadRecentProgress() {
+            try {
+                const { data } = await db
+                    .from('progress_santri')
+                    .select(`
+                        *,
+                        santri:santri_id(nama),
+                        materi_item:materi_item_id(nama, tipe)
+                    `)
+                    .eq('status', 'selesai')
+                    .order('tanggal_selesai', { ascending: false })
+                    .limit(5);
+                
+                if (!data || data.length === 0) {
+                    $('recentProgress').innerHTML = '<p class="text-muted">Belum ada progress</p>';
+                    return;
+                }
+                
+                let html = '';
+                for (const p of data) {
+                    html += `
+                        <div style="padding:0.75rem 0;border-bottom:1px solid var(--gray-200);">
+                            <div style="display:flex;justify-content:space-between;">
+                                <strong>${p.santri?.nama || '-'}</strong>
+                                <span class="badge badge-success">Selesai</span>
+                            </div>
+                            <div class="text-sm text-muted mt-sm">
+                                ${p.materi_item?.nama || '-'} • ${formatTanggal(p.tanggal_selesai)}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                $('recentProgress').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading recent progress:', error);
+            }
+        }
+        
+        function toggleSidebar() {
+            $('sidebar').classList.toggle('show');
+        }
+    </script>
+</body>
+</html>
