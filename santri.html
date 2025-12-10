@@ -267,10 +267,18 @@
             initSidebar();
             updateUserUI();
             
-            // Get wilayah dari role user (ambil yang pertama)
-            const userRoleWithWilayah = userRoles.find(r => r.wilayah_id);
+            // Debug: tampilkan userRoles
+            console.log('userRoles:', JSON.stringify(userRoles, null, 2));
+            
+            // Get wilayah dari role user
+            // Format dari query: { wilayah_id: 22, wilayah: { id: 22, nama: 'Klasaman', ... }, role: {...} }
+            const userRoleWithWilayah = userRoles.find(r => r.wilayah_id || r.wilayah);
             if (userRoleWithWilayah) {
+                // Ambil wilayah_id langsung atau dari nested object
                 userWilayahId = userRoleWithWilayah.wilayah_id;
+                console.log('User wilayah ID:', userWilayahId, 'Wilayah:', userRoleWithWilayah.wilayah);
+            } else {
+                console.log('User tidak punya wilayah, akan tampilkan semua data');
             }
             
             await loadFilters();
@@ -453,9 +461,10 @@
                 } else if (daerahId) {
                     wilayahId = parseInt(daerahId);
                 } else if (userWilayahId) {
-                    // Gunakan wilayah dari role user
                     wilayahId = userWilayahId;
                 }
+                
+                console.log('Loading santri with params:', { wilayahId, jenjangId, status });
                 
                 // Panggil RPC function
                 const { data, error } = await db.rpc('get_santri_by_wilayah', {
@@ -463,6 +472,8 @@
                     p_jenjang_id: jenjangId ? parseInt(jenjangId) : null,
                     p_status: status || null
                 });
+                
+                console.log('RPC result:', { data, error });
                 
                 if (error) throw error;
                 
@@ -480,7 +491,7 @@
                 
             } catch (error) {
                 console.error('Error loading santri:', error);
-                showToast('Gagal memuat data santri: ' + error.message, 'error');
+                showToast('Gagal memuat data santri: ' + (error.message || error), 'error');
             }
         }
         

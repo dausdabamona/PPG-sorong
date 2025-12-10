@@ -28,6 +28,8 @@ function checkTestMode() {
 async function loadTestModeData() {
     if (!isTestMode || !currentUserData) return;
     
+    console.log('Loading test mode data for user:', currentUserData.id);
+    
     // Get user roles
     const { data: rolesData, error: rolesError } = await db
         .from('user_role')
@@ -39,8 +41,12 @@ async function loadTestModeData() {
         .eq('user_id', currentUserData.id)
         .eq('is_aktif', true);
     
+    console.log('User roles result:', { rolesData, rolesError });
+    
     if (!rolesError) {
         userRoles = rolesData || [];
+    } else {
+        console.error('Error loading user roles:', rolesError);
     }
 }
 
