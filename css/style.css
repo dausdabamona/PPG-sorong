@@ -278,7 +278,7 @@ h1 { font-size: 2rem; } h2 { font-size: 1.5rem; } h3 { font-size: 1.25rem; } h4 
 .header-left { display: flex; align-items: center; gap: var(--space-md); }
 
 .btn-menu {
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
     width: 40px; height: 40px;
@@ -502,21 +502,6 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
    RESPONSIVE
    ============================================================================ */
 
-/* Tombol menu selalu tampil */
-.btn-menu { 
-    display: flex !important; 
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border: none;
-    background: var(--gray-100);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    font-size: 1.25rem;
-}
-.btn-menu:hover { background: var(--gray-200); }
-
 @media (max-width: 768px) {
     .sidebar { transform: translateX(-100%); }
     .sidebar.show { transform: translateX(0); }
@@ -531,6 +516,7 @@ select.form-control { appearance: none; background-image: url("data:image/svg+xm
     .sidebar { transform: translateX(0); }
     .sidebar.collapsed { transform: translateX(-100%); }
     .sidebar.collapsed ~ .sidebar-overlay + .main-content { margin-left: 0; }
+    .main-content { transition: margin-left 0.3s ease; }
     .user-info { display: block; }
     .stats-grid { grid-template-columns: repeat(4, 1fr); }
     .stat-card { flex-direction: row; text-align: left; padding: var(--space-lg); }

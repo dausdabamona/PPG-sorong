@@ -285,19 +285,80 @@
                 const { data: wilayah } = await db.from('wilayah').select('*').eq('is_aktif', true).order('nama');
                 allWilayah = wilayah || [];
                 
+                // Cek apakah admin
+                const isAdmin = userRoles.some(r => r.role?.kode === 'admin');
+                
+                // Get wilayah yang bisa diakses user
+                const userWilayahIds = userRoles.map(r => r.wilayah_id).filter(Boolean);
+                
+                let accessibleWilayah = [];
+                
+                if (isAdmin || userWilayahIds.length === 0) {
+                    // Admin bisa akses semua
+                    accessibleWilayah = allWilayah;
+                } else {
+                    // Filter berdasarkan wilayah user dan child-nya
+                    userWilayahIds.forEach(wId => {
+                        const w = allWilayah.find(x => x.id === wId);
+                        if (!w) return;
+                        
+                        accessibleWilayah.push(w);
+                        
+                        if (w.tingkat === 'daerah') {
+                            // Tambah semua desa dan kelompok di daerah ini
+                            const desas = allWilayah.filter(x => x.parent_id === w.id);
+                            accessibleWilayah.push(...desas);
+                            desas.forEach(d => {
+                                const kelompoks = allWilayah.filter(x => x.parent_id === d.id);
+                                accessibleWilayah.push(...kelompoks);
+                            });
+                        } else if (w.tingkat === 'desa') {
+                            // Tambah semua kelompok di desa ini
+                            const kelompoks = allWilayah.filter(x => x.parent_id === w.id);
+                            accessibleWilayah.push(...kelompoks);
+                        }
+                        // Jika tingkat kelompok, hanya wilayah itu yang bisa diakses
+                    });
+                    
+                    // Remove duplicates
+                    accessibleWilayah = [...new Map(accessibleWilayah.map(w => [w.id, w])).values()];
+                }
+                
+                // Store accessible wilayah untuk digunakan di loadSantri
+                window.accessibleWilayah = accessibleWilayah;
+                window.accessibleKelompokIds = accessibleWilayah.filter(w => w.tingkat === 'kelompok').map(w => w.id);
+                
                 // Populate filter daerah
-                const daerahList = allWilayah.filter(w => w.tingkat === 'daerah');
-                $('filterDaerah').innerHTML = '<option value="">Semua Daerah</option>' + 
-                    daerahList.map(d => `<option value="${d.id}">${d.nama}</option>`).join('');
+                const daerahList = accessibleWilayah.filter(w => w.tingkat === 'daerah');
+                if (daerahList.length > 0) {
+                    $('filterDaerah').innerHTML = (daerahList.length > 1 ? '<option value="">Semua Daerah</option>' : '') + 
+                        daerahList.map(d => `<option value="${d.id}">${d.nama}</option>`).join('');
+                    // Auto-select jika hanya 1 daerah
+                    if (daerahList.length === 1) {
+                        $('filterDaerah').value = daerahList[0].id;
+                    }
+                } else {
+                    $('filterDaerah').innerHTML = '<option value="">-</option>';
+                    $('filterDaerah').disabled = true;
+                }
                 
                 // Populate form daerah
                 $('formDaerah').innerHTML = '<option value="">-- Pilih Daerah --</option>' + 
                     daerahList.map(d => `<option value="${d.id}">${d.nama}</option>`).join('');
                 
-                // Populate filter kelompok (semua kelompok)
-                const kelompokList = allWilayah.filter(w => w.tingkat === 'kelompok');
-                $('filterKelompok').innerHTML = '<option value="">Semua Kelompok</option>' + 
-                    kelompokList.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+                // Populate filter kelompok (hanya yang accessible)
+                const kelompokList = accessibleWilayah.filter(w => w.tingkat === 'kelompok');
+                if (kelompokList.length > 0) {
+                    $('filterKelompok').innerHTML = (kelompokList.length > 1 ? '<option value="">Semua Kelompok</option>' : '') + 
+                        kelompokList.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+                    // Auto-select jika hanya 1 kelompok
+                    if (kelompokList.length === 1) {
+                        $('filterKelompok').value = kelompokList[0].id;
+                    }
+                } else {
+                    $('filterKelompok').innerHTML = '<option value="">-</option>';
+                    $('filterKelompok').disabled = true;
+                }
                 
                 // Load jenjang
                 const { data: jenjang } = await db.from('jenjang').select('*').eq('is_aktif', true).order('urutan');
@@ -407,15 +468,25 @@
                     `)
                     .eq('status', 'aktif');
                 
-                // Filter by kelompok
+                // Filter by kelompok - prioritas: filter manual > accessible wilayah
                 if (kelompokId) {
                     query = query.eq('wilayah_id', kelompokId);
                 } else if (daerahId) {
-                    // Get all kelompok in this daerah
-                    const kelompokIds = allWilayah.filter(w => w.tingkat === 'kelompok' && w.parent_id == daerahId).map(w => w.id);
+                    // Get all kelompok in this daerah yang accessible
+                    const kelompokIds = (window.accessibleWilayah || allWilayah)
+                        .filter(w => w.tingkat === 'kelompok' && w.parent_id == daerahId)
+                        .map(w => w.id);
                     if (kelompokIds.length > 0) {
                         query = query.in('wilayah_id', kelompokIds);
+                    } else {
+                        // Tidak ada kelompok yang bisa diakses
+                        $('infoTotal').textContent = 'Total: 0 santri';
+                        renderTable([]);
+                        return;
                     }
+                } else if (window.accessibleKelompokIds && window.accessibleKelompokIds.length > 0) {
+                    // Filter berdasarkan wilayah yang bisa diakses user
+                    query = query.in('wilayah_id', window.accessibleKelompokIds);
                 }
                 
                 // Filter by jenjang
