@@ -197,29 +197,8 @@
                     <hr style="margin:1.5rem 0;"><h4 style="margin-bottom:1rem;">Enrollment</h4>
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label required">Daerah</label>
-                            <select class="form-control" name="daerah_id" id="formDaerah" onchange="onFormDaerahChange()" required>
-                                <option value="">-- Pilih Daerah --</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label required">Kelompok</label>
-                            <select class="form-control" name="wilayah_id" id="formKelompok" required>
-                                <option value="">-- Pilih Kelompok --</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label required">Jenjang</label>
-                            <select class="form-control" name="jenjang_id" id="formJenjang" required>
-                                <option value="">-- Pilih --</option>
-                            </select>
-                            <small class="form-text" id="jenjangInfo">Akan otomatis dipilih berdasarkan umur</small>
-                        </div>
-                        <div class="form-group">
                             <label class="form-label">Status</label>
-                            <select class="form-control" name="status" id="formStatus">
+                            <select class="form-control" name="status" id="formStatus" onchange="onStatusChange()">
                                 <option value="aktif">Aktif</option>
                                 <option value="nonaktif">Nonaktif</option>
                                 <option value="lulus">Lulus</option>
@@ -227,7 +206,32 @@
                                 <option value="menikah">Menikah</option>
                             </select>
                         </div>
+                        <div class="form-group" id="pindahKeGroup" style="display:none;">
+                            <label class="form-label">Pindah Ke</label>
+                            <select class="form-control" id="pindahKe" onchange="onPindahKeChange()">
+                                <option value="keluar">Keluar Sorong</option>
+                                <option value="pindah_kelompok">Pindah Kelompok (dalam Sorong)</option>
+                            </select>
+                        </div>
                     </div>
+                    <div id="enrollmentFields">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label required">Kelompok</label>
+                                <select class="form-control" name="wilayah_id" id="formKelompok" required>
+                                    <option value="">-- Pilih Kelompok --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">Jenjang</label>
+                                <select class="form-control" name="jenjang_id" id="formJenjang" required>
+                                    <option value="">-- Pilih --</option>
+                                </select>
+                                <small class="form-text" id="jenjangInfo">Akan otomatis dipilih berdasarkan umur</small>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="daerah_id" id="formDaerah">
                 </form>
             </div>
             <div class="modal-footer">
@@ -334,9 +338,10 @@
                 $('filterDaerah').innerHTML = '<option value="">Semua Daerah</option>' + 
                     daerahList.map(d => `<option value="${d.id}">${d.nama}</option>`).join('');
                 
-                // Form daerah (untuk tambah santri)
-                $('formDaerah').innerHTML = '<option value="">-- Pilih Daerah --</option>' + 
-                    daerahList.map(d => `<option value="${d.id}">${d.nama}</option>`).join('');
+                // Form daerah (hidden, auto-set ke daerah pertama)
+                if (daerahList.length > 0) {
+                    $('formDaerah').value = daerahList[0].id;
+                }
                 
                 // Populate filter kelompok berdasarkan tingkat user
                 let kelompokList = allWilayah.filter(w => w.tingkat === 'kelompok');
@@ -354,9 +359,14 @@
                 $('filterKelompok').innerHTML = '<option value="">Semua Kelompok</option>' + 
                     kelompokList.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
                 
+                // Form kelompok (untuk tambah/edit santri)
+                $('formKelompok').innerHTML = '<option value="">-- Pilih Kelompok --</option>' + 
+                    kelompokList.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+                
                 // Auto-select jika hanya 1 kelompok
                 if (kelompokList.length === 1) {
                     $('filterKelompok').value = kelompokList[0].id;
+                    $('formKelompok').value = kelompokList[0].id;
                 }
                 
                 // Load jenjang
@@ -395,20 +405,64 @@
             loadSantri();
         }
         
-        // Form daerah berubah -> update kelompok di form
+        // Form daerah berubah -> update kelompok di form (tidak dipakai lagi, daerah di-hidden)
         function onFormDaerahChange() {
-            const daerahId = $('formDaerah').value;
-            
-            if (!daerahId) {
-                $('formKelompok').innerHTML = '<option value="">-- Pilih Kelompok --</option>';
-                return;
-            }
-            
-            // Get kelompok dalam daerah ini (langsung dari parent_id)
-            const kelompokList = allWilayah.filter(w => w.tingkat === 'kelompok' && w.parent_id == daerahId);
-            
+            // Langsung load semua kelompok karena hanya 1 daerah
+            loadKelompokOptions();
+        }
+        
+        // Load kelompok options
+        function loadKelompokOptions() {
+            const kelompokList = allWilayah.filter(w => w.tingkat === 'kelompok');
             $('formKelompok').innerHTML = '<option value="">-- Pilih Kelompok --</option>' + 
                 kelompokList.map(k => `<option value="${k.id}">${k.nama}</option>`).join('');
+        }
+        
+        // Handler saat status berubah
+        function onStatusChange() {
+            const status = $('formStatus').value;
+            const pindahKeGroup = $('pindahKeGroup');
+            const enrollmentFields = $('enrollmentFields');
+            const formKelompok = $('formKelompok');
+            const formJenjang = $('formJenjang');
+            
+            if (status === 'pindah') {
+                // Tampilkan pilihan pindah ke mana
+                pindahKeGroup.style.display = 'block';
+                onPindahKeChange(); // Update enrollment fields
+            } else if (status === 'menikah' || status === 'lulus') {
+                // Menikah/Lulus: tidak perlu enrollment baru
+                pindahKeGroup.style.display = 'none';
+                enrollmentFields.style.display = 'none';
+                formKelompok.removeAttribute('required');
+                formJenjang.removeAttribute('required');
+            } else {
+                // Aktif/Nonaktif: perlu enrollment
+                pindahKeGroup.style.display = 'none';
+                enrollmentFields.style.display = 'block';
+                formKelompok.setAttribute('required', 'required');
+                formJenjang.setAttribute('required', 'required');
+            }
+        }
+        
+        // Handler saat pilihan pindah berubah
+        function onPindahKeChange() {
+            const pindahKe = $('pindahKe').value;
+            const enrollmentFields = $('enrollmentFields');
+            const formKelompok = $('formKelompok');
+            const formJenjang = $('formJenjang');
+            
+            if (pindahKe === 'keluar') {
+                // Pindah keluar: tidak perlu enrollment
+                enrollmentFields.style.display = 'none';
+                formKelompok.removeAttribute('required');
+                formJenjang.removeAttribute('required');
+            } else {
+                // Pindah kelompok: perlu pilih kelompok baru
+                enrollmentFields.style.display = 'block';
+                formKelompok.setAttribute('required', 'required');
+                formJenjang.setAttribute('required', 'required');
+            }
         }
         
         // Auto select jenjang berdasarkan umur
@@ -428,18 +482,27 @@
             umurInfo.innerHTML = `<strong>Umur: ${umur} tahun</strong>`;
             
             let matchedJenjang = null;
-            for (const j of allJenjang) {
-                const usiaMin = j.usia_mulai || 0;
-                const usiaMax = j.usia_sampai || 99;
-                if (umur >= usiaMin && umur <= usiaMax) {
-                    matchedJenjang = j;
-                    break;
+            
+            // Umur 18+ otomatis Pra Nikah (sebelum menikah)
+            if (umur >= 18) {
+                matchedJenjang = allJenjang.find(j => j.nama.toLowerCase().includes('pra nikah') || j.nama.toLowerCase().includes('pranikah'));
+            }
+            
+            // Jika tidak ketemu Pra Nikah atau umur < 18, cari berdasarkan range
+            if (!matchedJenjang) {
+                for (const j of allJenjang) {
+                    const usiaMin = j.usia_mulai || 0;
+                    const usiaMax = j.usia_sampai || 99;
+                    if (umur >= usiaMin && umur <= usiaMax) {
+                        matchedJenjang = j;
+                        break;
+                    }
                 }
             }
             
             if (matchedJenjang) {
                 selectJenjang.value = matchedJenjang.id;
-                jenjangInfo.innerHTML = `<span class="text-success">✓ Otomatis: ${matchedJenjang.nama} (${matchedJenjang.usia_mulai}-${matchedJenjang.usia_sampai} tahun)</span>`;
+                jenjangInfo.innerHTML = `<span class="text-success">✓ Otomatis: ${matchedJenjang.nama}</span>`;
             } else {
                 jenjangInfo.innerHTML = `<span class="text-warning">⚠ Tidak ada jenjang untuk umur ${umur} tahun. Pilih manual.</span>`;
             }
@@ -563,8 +626,14 @@
             $('santriId').value = '';
             $('umurInfo').textContent = '';
             $('jenjangInfo').textContent = 'Akan otomatis dipilih berdasarkan umur';
-            $('formKelompok').innerHTML = '<option value="">-- Pilih Kelompok --</option>';
             $('formStatus').value = 'aktif';
+            $('pindahKeGroup').style.display = 'none';
+            $('enrollmentFields').style.display = 'block';
+            
+            // Reset required attributes
+            $('formKelompok').setAttribute('required', 'required');
+            $('formJenjang').setAttribute('required', 'required');
+            
             showModal('santriModal');
         }
         
@@ -597,15 +666,16 @@
                 
                 // Set enrollment data
                 if (enrollment && enrollment.wilayah) {
-                    // Set daerah (parent dari kelompok)
-                    $('formDaerah').value = enrollment.wilayah.parent_id;
-                    onFormDaerahChange();
                     $('formKelompok').value = enrollment.wilayah_id;
                     $('formJenjang').value = enrollment.jenjang_id || '';
                 }
                 
+                // Handle status display
+                onStatusChange();
+                
                 if (santri.tanggal_lahir) {
-                    autoSelectJenjang();
+                    const umur = hitungUmur(santri.tanggal_lahir);
+                    $('umurInfo').innerHTML = `<strong>Umur: ${umur} tahun</strong>`;
                 } else {
                     $('umurInfo').textContent = '';
                     $('jenjangInfo').textContent = '';
@@ -620,7 +690,15 @@
         
         async function saveSantri() {
             const form = $('santriForm');
-            if (!form.checkValidity()) {
+            const status = $('formStatus').value;
+            const pindahKe = $('pindahKe')?.value;
+            
+            // Validasi form - skip enrollment validation jika pindah keluar/menikah/lulus
+            const skipEnrollment = (status === 'pindah' && pindahKe === 'keluar') || 
+                                   status === 'menikah' || 
+                                   status === 'lulus';
+            
+            if (!skipEnrollment && !form.checkValidity()) {
                 form.reportValidity();
                 return;
             }
@@ -649,14 +727,48 @@
                     const { error } = await db.from('santri').update(santriData).eq('id', santriId);
                     if (error) throw error;
                     
-                    // Update enrollment
-                    await db.from('enrollment').update({
-                        wilayah_id: formData.wilayah_id,
-                        jenjang_id: formData.jenjang_id
-                    }).eq('santri_id', santriId).eq('status', 'aktif');
+                    // Handle enrollment berdasarkan status
+                    if (status === 'pindah' && pindahKe === 'keluar') {
+                        // Pindah keluar: nonaktifkan enrollment lama
+                        await db.from('enrollment').update({
+                            status: 'nonaktif'
+                        }).eq('santri_id', santriId).eq('status', 'aktif');
+                        
+                    } else if (status === 'menikah' || status === 'lulus') {
+                        // Menikah/Lulus: nonaktifkan enrollment
+                        await db.from('enrollment').update({
+                            status: 'nonaktif'
+                        }).eq('santri_id', santriId).eq('status', 'aktif');
+                        
+                    } else if (status === 'pindah' && pindahKe === 'pindah_kelompok') {
+                        // Pindah kelompok: nonaktifkan enrollment lama, buat baru
+                        await db.from('enrollment').update({
+                            status: 'nonaktif'
+                        }).eq('santri_id', santriId).eq('status', 'aktif');
+                        
+                        const { data: ta } = await db.from('tahun_ajaran').select('id').eq('is_aktif', true).single();
+                        await db.from('enrollment').insert({
+                            santri_id: santriId,
+                            wilayah_id: formData.wilayah_id,
+                            jenjang_id: formData.jenjang_id,
+                            tahun_ajaran_id: ta?.id,
+                            status: 'aktif',
+                            created_by: currentUserData?.id
+                        });
+                        
+                        // Set santri status kembali aktif
+                        await db.from('santri').update({ status: 'aktif' }).eq('id', santriId);
+                        
+                    } else {
+                        // Update enrollment biasa
+                        await db.from('enrollment').update({
+                            wilayah_id: formData.wilayah_id,
+                            jenjang_id: formData.jenjang_id
+                        }).eq('santri_id', santriId).eq('status', 'aktif');
+                    }
                     
                 } else {
-                    // Insert santri
+                    // Insert santri baru
                     santriData.created_by = currentUserData?.id;
                     const { data: newSantri, error } = await db.from('santri').insert(santriData).select().single();
                     if (error) throw error;
