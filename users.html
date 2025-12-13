@@ -22,7 +22,7 @@
             <nav class="sidebar-nav">
                 <div class="nav-section">MENU UTAMA</div>
                 <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">Dashboard</span></a>
-                <a href="santri.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-text">Data Santri</span></a>
+                <a href="jamaah.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-text">Data Jamaah</span></a>
                 <a href="pengajian.html" class="nav-item"><span class="nav-icon">📖</span><span class="nav-text">Pengajian</span></a>
                 <a href="presensi.html" class="nav-item"><span class="nav-icon">✅</span><span class="nav-text">Presensi</span></a>
                 <a href="progress.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-text">Progress Hafalan</span></a>
@@ -216,7 +216,8 @@
         async function loadAllData() {
             await Promise.all([loadUsers(), loadRoles(), loadWilayah(), loadAssignments()]);
             $('totalUsers').textContent = allUsers.length;
-            $('activeUsers').textContent = allUsers.filter(u => u.status === 'aktif').length;
+            // Users table doesn't have status field - count all as active
+            $('activeUsers').textContent = allUsers.length;
             $('totalRoles').textContent = allRoles.length;
         }
         
@@ -240,7 +241,7 @@
                     <td><strong>${u.nama || '-'}</strong></td>
                     <td>${u.email}</td>
                     <td>${(map[u.id] || []).map(r => `<span class="badge badge-primary">${r}</span>`).join(' ') || '-'}</td>
-                    <td><span class="badge ${u.status === 'aktif' ? 'badge-success' : 'badge-secondary'}">${u.status}</span></td>
+                    <td>${u.phone || '-'}</td>
                     <td><button class="btn btn-sm btn-outline" onclick="editUser(${u.id})">✏️</button></td>
                 </tr>
             `).join('') || '<tr><td colspan="6" class="text-center text-muted">Tidak ada data</td></tr>';
@@ -257,7 +258,7 @@
         async function saveUser() {
             const fd = getFormData('userForm');
             try {
-                await db.from('users').update({ nama: fd.nama, phone: fd.phone, status: fd.status }).eq('id', fd.id);
+                await db.from('users').update({ nama: fd.nama, phone: fd.phone }).eq('id', fd.id);
                 showToast('User berhasil diupdate', 'success');
                 hideModal('userModal');
                 await loadUsers();

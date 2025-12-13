@@ -23,7 +23,7 @@
             <nav class="sidebar-nav">
                 <div class="nav-section">MENU UTAMA</div>
                 <a href="dashboard.html" class="nav-item active"><span class="nav-icon">📊</span><span class="nav-text">Dashboard</span></a>
-                <a href="santri.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-text">Data Santri</span></a>
+                <a href="jamaah.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-text">Data Jamaah</span></a>
                 <a href="pengajian.html" class="nav-item"><span class="nav-icon">📖</span><span class="nav-text">Pengajian</span></a>
                 <a href="presensi.html" class="nav-item"><span class="nav-icon">✅</span><span class="nav-text">Presensi</span></a>
                 <a href="progress.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-text">Progress Hafalan</span></a>
@@ -138,7 +138,7 @@
                         </div>
                         <div class="card-body">
                             <div style="display:flex;flex-direction:column;gap:0.75rem;">
-                                <a href="santri.html?action=add" class="btn btn-primary">➕ Tambah Santri Baru</a>
+                                <a href="jamaah.html?action=add" class="btn btn-primary">➕ Tambah Santri Baru</a>
                                 <a href="pengajian.html?action=add" class="btn btn-success">📖 Buat Pengajian</a>
                                 <a href="presensi.html" class="btn btn-warning">✅ Input Presensi</a>
                                 <a href="progress.html?action=add" class="btn btn-outline">📈 Input Hafalan</a>
@@ -171,9 +171,9 @@
         
         async function loadDashboardData() {
             try {
-                // Total Santri Aktif
-                const { count: santriCount } = await db.from('santri').select('*', { count: 'exact', head: true }).eq('status', 'aktif');
-                $('totalSantri').textContent = formatAngka(santriCount || 0);
+                // Total Jamaah Aktif
+                const { count: jamaahCount } = await db.from('jamaah').select('*', { count: 'exact', head: true }).eq('status_aktif', 'aktif');
+                $('totalSantri').textContent = formatAngka(jamaahCount || 0);
                 
                 // Pengajian bulan ini
                 const startOfMonth = new Date();
@@ -223,7 +223,8 @@
         
         async function loadRecentPengajian() {
             try {
-                const { data } = await db.from('pengajian').select('*, wilayah:wilayah_id(nama), mubaligh:mubaligh_id(nama)').order('tanggal', { ascending: false }).limit(5);
+                // Note: mubaligh_id tidak ada di tabel pengajian, gunakan created_by atau hapus
+                const { data } = await db.from('pengajian').select('*, wilayah:wilayah_id(nama), jenjang:jenjang_id(nama)').order('tanggal', { ascending: false }).limit(5);
                 if (!data || data.length === 0) {
                     $('recentPengajian').innerHTML = '<p class="text-muted">Belum ada pengajian</p>';
                     return;
@@ -233,7 +234,7 @@
                     <div style="padding:0.75rem 0;border-bottom:1px solid var(--gray-200);">
                         <div style="display:flex;justify-content:space-between;">
                             <strong>${p.wilayah?.nama || '-'}</strong>
-                            <span class="badge ${p.jenis === 'masal' ? 'badge-primary' : 'badge-secondary'}">${p.jenis}</span>
+                            <span class="badge badge-primary">${p.jenjang?.nama || '-'}</span>
                         </div>
                         <div class="text-sm text-muted mt-sm">${formatTanggal(p.tanggal)}</div>
                     </div>
@@ -245,7 +246,7 @@
         
         async function loadRecentProgress() {
             try {
-                const { data } = await db.from('progress_santri').select('*, santri:santri_id(nama), materi_item:materi_item_id(nama)').eq('status', 'selesai').order('tanggal_selesai', { ascending: false }).limit(5);
+                const { data } = await db.from('progress_jamaah').select('*, jamaah:jamaah_id(nama), materi_item:materi_item_id(nama)').eq('status', 'selesai').order('tanggal_selesai', { ascending: false }).limit(5);
                 if (!data || data.length === 0) {
                     $('recentProgress').innerHTML = '<p class="text-muted">Belum ada progress</p>';
                     return;
@@ -254,7 +255,7 @@
                 $('recentProgress').innerHTML = data.map(p => `
                     <div style="padding:0.75rem 0;border-bottom:1px solid var(--gray-200);">
                         <div style="display:flex;justify-content:space-between;">
-                            <strong>${p.santri?.nama || '-'}</strong>
+                            <strong>${p.jamaah?.nama || '-'}</strong>
                             <span class="badge badge-success">Selesai</span>
                         </div>
                         <div class="text-sm text-muted mt-sm">${p.materi_item?.nama || '-'}</div>

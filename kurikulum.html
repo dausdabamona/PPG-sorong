@@ -60,7 +60,7 @@
             <nav class="sidebar-nav">
                 <div class="nav-section">MENU UTAMA</div>
                 <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">Dashboard</span></a>
-                <a href="santri.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-text">Data Santri</span></a>
+                <a href="jamaah.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-text">Data Jamaah</span></a>
                 <a href="pengajian.html" class="nav-item"><span class="nav-icon">📖</span><span class="nav-text">Pengajian</span></a>
                 <a href="presensi.html" class="nav-item"><span class="nav-icon">✅</span><span class="nav-text">Presensi</span></a>
                 <a href="progress.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-text">Progress Hafalan</span></a>
@@ -729,7 +729,7 @@
             if (!await confirmDialog('Yakin ingin menghapus materi ini?')) return;
             
             try {
-                await db.from('progress_santri').delete().eq('materi_item_id', id);
+                await db.from('progress_jamaah').delete().eq('materi_item_id', id);
                 await db.from('materi_item').delete().eq('id', id);
                 showToast('Materi berhasil dihapus', 'success');
                 await loadMateri();
@@ -825,7 +825,7 @@
             try {
                 const materiIds = allMateri.filter(m => m.kategori_id === id).map(m => m.id);
                 if (materiIds.length > 0) {
-                    await db.from('progress_santri').delete().in('materi_item_id', materiIds);
+                    await db.from('progress_jamaah').delete().in('materi_item_id', materiIds);
                     await db.from('materi_item').delete().eq('kategori_id', id);
                 }
                 await db.from('kategori_materi').delete().eq('id', id);

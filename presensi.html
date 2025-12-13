@@ -22,7 +22,7 @@
             <nav class="sidebar-nav">
                 <div class="nav-section">MENU UTAMA</div>
                 <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">Dashboard</span></a>
-                <a href="santri.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-text">Data Santri</span></a>
+                <a href="jamaah.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-text">Data Jamaah</span></a>
                 <a href="pengajian.html" class="nav-item"><span class="nav-icon">📖</span><span class="nav-text">Pengajian</span></a>
                 <a href="presensi.html" class="nav-item active"><span class="nav-icon">✅</span><span class="nav-text">Presensi</span></a>
                 <a href="progress.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-text">Progress Hafalan</span></a>
@@ -139,7 +139,7 @@
     
     <script>
         let currentPengajian = null;
-        let santriList = [];
+        let jamaahList = [];
         let existingPresensi = {};
         
         
@@ -178,7 +178,7 @@
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                 
                 const { data, error } = await db.from('pengajian')
-                    .select('id, tanggal, jenis, wilayah:wilayah_id(nama)')
+                    .select('id, tanggal, wilayah:wilayah_id(nama), jenjang:jenjang_id(nama)')
                     .gte('tanggal', thirtyDaysAgo.toISOString().split('T')[0])
                     .order('tanggal', { ascending: false });
                 
@@ -186,7 +186,7 @@
                 
                 const select = $('selectPengajian');
                 data?.forEach(p => {
-                    select.innerHTML += `<option value="${p.id}">${formatTanggalSingkat(p.tanggal)} - ${p.jenis} - ${p.wilayah?.nama || '-'}</option>`;
+                    select.innerHTML += `<option value="${p.id}">${formatTanggalSingkat(p.tanggal)} - ${p.jenjang?.nama || '-'} - ${p.wilayah?.nama || '-'}</option>`;
                 });
             } catch (error) {
                 console.error('Error:', error);
@@ -204,7 +204,7 @@
             try {
                 // Get pengajian detail
                 const { data: pengajian } = await db.from('pengajian')
-                    .select('*, wilayah:wilayah_id(id, nama), mubaligh:mubaligh_id(nama)')
+                    .select('*, wilayah:wilayah_id(id, nama), jenjang:jenjang_id(nama), creator:created_by(nama)')
                     .eq('id', pengajianId)
                     .single();
                 
@@ -214,19 +214,19 @@
                 // Show info
                 $('pengajianInfo').style.display = 'block';
                 $('infoTanggal').textContent = formatTanggal(pengajian.tanggal);
-                $('infoJenis').textContent = pengajian.jenis;
+                $('infoJenis').textContent = pengajian.jenjang?.nama || '-';
                 $('infoKelompok').textContent = pengajian.wilayah?.nama || '-';
-                $('infoMubaligh').textContent = pengajian.mubaligh?.nama || '-';
+                $('infoMubaligh').textContent = pengajian.creator?.nama || '-';
                 
-                // Get santri in this kelompok
+                // Get jamaah in this kelompok
                 const { data: enrollments } = await db.from('enrollment')
-                    .select('santri:santri_id(id, nama), jenjang:jenjang_id(nama)')
+                    .select('jamaah:jamaah_id(id, nama), jenjang:jenjang_id(nama)')
                     .eq('wilayah_id', pengajian.wilayah.id)
                     .eq('status', 'aktif');
                 
-                santriList = enrollments?.map(e => ({
-                    id: e.santri.id,
-                    nama: e.santri.nama,
+                jamaahList = enrollments?.map(e => ({
+                    id: e.jamaah.id,
+                    nama: e.jamaah.nama,
                     jenjang: e.jenjang?.nama
                 })) || [];
                 
@@ -237,7 +237,7 @@
                 
                 existingPresensi = {};
                 presensi?.forEach(p => {
-                    existingPresensi[p.santri_id] = p;
+                    existingPresensi[p.jamaah_id] = p;
                 });
                 
                 renderPresensiTable();
@@ -252,43 +252,43 @@
         function renderPresensiTable() {
             const tbody = $$('#presensiTable tbody');
             
-            if (santriList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada santri di kelompok ini</td></tr>';
+            if (jamaahList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada jamaah di kelompok ini</td></tr>';
                 return;
             }
             
-            tbody.innerHTML = santriList.map((s, i) => {
-                const existing = existingPresensi[s.id];
+            tbody.innerHTML = jamaahList.map((j, i) => {
+                const existing = existingPresensi[j.id];
                 const status = existing?.status || 'hadir';
                 const keterangan = existing?.keterangan || '';
                 
                 return `
                 <tr>
                     <td>${i + 1}</td>
-                    <td><strong>${s.nama}</strong></td>
-                    <td>${s.jenjang || '-'}</td>
+                    <td><strong>${j.nama}</strong></td>
+                    <td>${j.jenjang || '-'}</td>
                     <td style="text-align:center;">
-                        <input type="radio" name="status_${s.id}" value="hadir" ${status === 'hadir' ? 'checked' : ''}>
+                        <input type="radio" name="status_${j.id}" value="hadir" ${status === 'hadir' ? 'checked' : ''}>
                     </td>
                     <td style="text-align:center;">
-                        <input type="radio" name="status_${s.id}" value="izin" ${status === 'izin' ? 'checked' : ''}>
+                        <input type="radio" name="status_${j.id}" value="izin" ${status === 'izin' ? 'checked' : ''}>
                     </td>
                     <td style="text-align:center;">
-                        <input type="radio" name="status_${s.id}" value="sakit" ${status === 'sakit' ? 'checked' : ''}>
+                        <input type="radio" name="status_${j.id}" value="sakit" ${status === 'sakit' ? 'checked' : ''}>
                     </td>
                     <td style="text-align:center;">
-                        <input type="radio" name="status_${s.id}" value="alpa" ${status === 'alpa' ? 'checked' : ''}>
+                        <input type="radio" name="status_${j.id}" value="alpa" ${status === 'alpa' ? 'checked' : ''}>
                     </td>
                     <td>
-                        <input type="text" class="form-control" name="keterangan_${s.id}" value="${keterangan}" placeholder="Opsional" style="width:150px;">
+                        <input type="text" class="form-control" name="keterangan_${j.id}" value="${keterangan}" placeholder="Opsional" style="width:150px;">
                     </td>
                 </tr>`;
             }).join('');
         }
         
         function setAllStatus(status) {
-            santriList.forEach(s => {
-                const radio = document.querySelector(`input[name="status_${s.id}"][value="${status}"]`);
+            jamaahList.forEach(j => {
+                const radio = document.querySelector(`input[name="status_${j.id}"][value="${status}"]`);
                 if (radio) radio.checked = true;
             });
         }
@@ -301,13 +301,13 @@
             btn.textContent = 'Menyimpan...';
             
             try {
-                const presensiData = santriList.map(s => {
-                    const statusRadio = document.querySelector(`input[name="status_${s.id}"]:checked`);
-                    const keteranganInput = document.querySelector(`input[name="keterangan_${s.id}"]`);
+                const presensiData = jamaahList.map(j => {
+                    const statusRadio = document.querySelector(`input[name="status_${j.id}"]:checked`);
+                    const keteranganInput = document.querySelector(`input[name="keterangan_${j.id}"]`);
                     
                     return {
                         pengajian_id: currentPengajian.id,
-                        santri_id: s.id,
+                        jamaah_id: j.id,
                         status: statusRadio?.value || 'hadir',
                         keterangan: keteranganInput?.value || null
                     };

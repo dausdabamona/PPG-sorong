@@ -22,7 +22,7 @@
             <nav class="sidebar-nav">
                 <div class="nav-section">MENU UTAMA</div>
                 <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">Dashboard</span></a>
-                <a href="santri.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-text">Data Santri</span></a>
+                <a href="jamaah.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-text">Data Jamaah</span></a>
                 <a href="pengajian.html" class="nav-item"><span class="nav-icon">📖</span><span class="nav-text">Pengajian</span></a>
                 <a href="presensi.html" class="nav-item"><span class="nav-icon">✅</span><span class="nav-text">Presensi</span></a>
                 <a href="progress.html" class="nav-item active"><span class="nav-icon">📈</span><span class="nav-text">Progress Hafalan</span></a>
@@ -206,7 +206,7 @@
     <script src="js/sidebar.js"></script>
     
     <script>
-        let currentSantri = null;
+        let currentJamaah = null;
         let materiList = [];
         let progressData = {};
         
@@ -221,7 +221,7 @@
             updateSidebarUserInfo();
             initSidebar();
             updateUserUI();
-            await loadSantriList();
+            await loadJamaahList();
             await loadKategoriList();
         });
         
@@ -233,16 +233,16 @@
             }
         }
         
-        async function loadSantriList() {
+        async function loadJamaahList() {
             try {
-                const { data } = await db.from('santri')
+                const { data } = await db.from('jamaah')
                     .select('id, nama')
-                    .eq('status', 'aktif')
+                    .eq('status_aktif', 'aktif')
                     .order('nama');
                 
                 const select = $('selectSantri');
-                data?.forEach(s => {
-                    select.innerHTML += `<option value="${s.id}">${s.nama}</option>`;
+                data?.forEach(j => {
+                    select.innerHTML += `<option value="${j.id}">${j.nama}</option>`;
                 });
             } catch (error) {
                 console.error('Error:', error);
@@ -266,10 +266,10 @@
         }
         
         async function loadProgress() {
-            const santriId = $('selectSantri').value;
+            const jamaahId = $('selectSantri').value;
             const kategoriId = $('selectKategori').value;
             
-            if (!santriId) {
+            if (!jamaahId) {
                 $('santriInfo').style.display = 'none';
                 $('summaryStats').style.display = 'none';
                 $('progressCard').style.display = 'none';
@@ -277,17 +277,17 @@
             }
             
             try {
-                // Get santri info
-                const { data: santri } = await db.from('santri')
+                // Get jamaah info
+                const { data: jamaah } = await db.from('jamaah')
                     .select('*, enrollment(jenjang:jenjang_id(nama), wilayah:wilayah_id(nama))')
-                    .eq('id', santriId)
+                    .eq('id', jamaahId)
                     .single();
                 
-                currentSantri = santri;
-                const enrollment = santri.enrollment?.[0];
+                currentJamaah = jamaah;
+                const enrollment = jamaah.enrollment?.[0];
                 
                 $('santriInfo').style.display = 'block';
-                $('infoNama').textContent = santri.nama;
+                $('infoNama').textContent = jamaah.nama;
                 $('infoJenjang').textContent = enrollment?.jenjang?.nama || '-';
                 $('infoKelompok').textContent = enrollment?.wilayah?.nama || '-';
                 
@@ -305,9 +305,9 @@
                 materiList = materi || [];
                 
                 // Get existing progress
-                const { data: progress } = await db.from('progress_santri')
+                const { data: progress } = await db.from('progress_jamaah')
                     .select('*')
-                    .eq('santri_id', santriId);
+                    .eq('jamaah_id', jamaahId);
                 
                 progressData = {};
                 progress?.forEach(p => {
@@ -372,11 +372,11 @@
         }
         
         function showProgressModal(materiId, materiNama) {
-            if (!currentSantri) return;
+            if (!currentJamaah) return;
             
             const existing = progressData[materiId];
             
-            $('inputSantriId').value = currentSantri.id;
+            $('inputSantriId').value = currentJamaah.id;
             $('inputMateriId').value = materiId;
             $('inputMateriNama').value = materiNama;
             
@@ -396,7 +396,7 @@
             try {
                 const formData = getFormData('progressForm');
                 const data = {
-                    santri_id: parseInt(formData.santri_id),
+                    jamaah_id: parseInt(formData.santri_id),
                     materi_item_id: parseInt(formData.materi_item_id),
                     status: formData.status,
                     nilai: formData.nilai ? parseFloat(formData.nilai) : null,
@@ -406,8 +406,8 @@
                 };
                 
                 // Upsert
-                const { error } = await db.from('progress_santri').upsert(data, {
-                    onConflict: 'santri_id,materi_item_id'
+                const { error } = await db.from('progress_jamaah').upsert(data, {
+                    onConflict: 'jamaah_id,materi_item_id'
                 });
                 
                 if (error) throw error;
