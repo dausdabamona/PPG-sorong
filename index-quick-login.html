@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - PPG Sorong</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .login-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .login-header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .login-body {
+            padding: 2rem;
+        }
+        
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 1rem;
+        }
+        
+        .kelompok-grid {
+            display: grid;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+        
+        .kelompok-btn {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #1e293b;
+        }
+        
+        .kelompok-btn:hover {
+            border-color: #667eea;
+            background: #eff6ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+        
+        .kelompok-btn:active {
+            transform: translateY(0);
+        }
+        
+        .kelompok-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .kelompok-info {
+            flex: 1;
+        }
+        
+        .kelompok-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .kelompok-desa {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        
+        .admin-login {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .admin-btn {
+            background: #1e293b;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .admin-btn:hover {
+            background: #334155;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading.active {
+            display: flex;
+        }
+        
+        .loading-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">PPG</div>
+            <h1>PPG Sorong</h1>
+            <p>Pembinaan Generasi Penerus</p>
+            <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(255,255,255,0.2); border-radius: 8px;">
+                <div style="font-size: 0.9rem; font-weight: 600;" id="userEmailDisplay">👤 Loading...</div>
+                <div style="font-size: 0.8rem; margin-top: 0.25rem; opacity: 0.9;">Pilih kelompok untuk melanjutkan</div>
+            </div>
+        </div>
+        
+        <div class="login-body">
+            <div class="section-title">Pilih Kelompok Anda</div>
+            
+            <div class="kelompok-grid" id="kelompokGrid">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            
+            <div class="admin-login">
+                <button class="admin-btn" onclick="showAdminLogin()">
+                    🔐 Login Admin
+                </button>
+                <button class="admin-btn" onclick="doLogout()" style="margin-top: 0.5rem; background: #ef4444;">
+                    🚪 Logout
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="loading" id="loading">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div>Loading...</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script>
+        // ========================================
+        // DEVELOPMENT MODE - ROLE SWITCHER
+        // ========================================
+        // User login sekali, lalu pilih role (kelompok) sebelum masuk aplikasi
+        
+        // Daftar kelompok untuk development
+        const kelompokList = [
+            { kode: 'SRG-REMU', nama: 'Remu', desa: 'Kota Sorong', icon: '🕌', count: 89 },
+            { kode: 'SRG-KLASAMAN', nama: 'Klasaman', desa: 'Kota Sorong', icon: '🕌', count: 45 },
+            { kode: 'SRG-KAMPUNGBARU', nama: 'Kampung Baru', desa: 'Kota Sorong', icon: '🕌', count: 57 },
+            { kode: 'AIM-MODAN', nama: 'Modan', desa: 'AIMAS', icon: '📖', count: 122 },
+            { kode: 'AIM-SP3', nama: 'SP 3', desa: 'AIMAS', icon: '📖', count: 0 },
+            { kode: 'AIM-JALURA', nama: 'Jalur A', desa: 'AIMAS', icon: '📖', count: 0 },
+            { kode: 'AIM-JALURC', nama: 'Jalur C', desa: 'AIMAS', icon: '📖', count: 0 },
+            { kode: 'KAI-BANTEMI', nama: 'Bantemi', desa: 'KAIMANA', icon: '📚', count: 38 },
+            { kode: 'KAI-KOTA', nama: 'Kelompok Kota', desa: 'KAIMANA', icon: '📚', count: 36 },
+            { kode: 'FF-BOMBERAI', nama: 'Bomberai', desa: 'FAK-FAK', icon: '📕', count: 0 },
+            { kode: 'FF-KOTA', nama: 'Kelompok Kota', desa: 'FAK-FAK', icon: '📕', count: 56 }
+        ];
+        
+        // Render kelompok buttons
+        function renderKelompok() {
+            const grid = document.getElementById('kelompokGrid');
+            grid.innerHTML = kelompokList.map((k, idx) => `
+                <button class="kelompok-btn" onclick="switchToKelompok('${k.kode}', '${k.nama}')">
+                    <div class="kelompok-icon">${k.icon}</div>
+                    <div class="kelompok-info">
+                        <div class="kelompok-name">${k.nama}</div>
+                        <div class="kelompok-desa">${k.desa} ${k.count > 0 ? '• ' + k.count + ' jamaah' : '• Kosong'}</div>
+                    </div>
+                    <div style="font-size: 1.5rem;">→</div>
+                </button>
+            `).join('');
+        }
+        
+        // Switch to kelompok (save preference and redirect)
+        async function switchToKelompok(kodeWilayah, namaKelompok) {
+            const loading = document.getElementById('loading');
+            
+            try {
+                loading.classList.add('active');
+                
+                // Check if already logged in
+                const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+                
+                // If not logged in, redirect to login
+                if (!user) {
+                    alert('Session expired. Silakan login kembali.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // Verify user has access to this kelompok
+                const { data: userRole, error: roleError } = await supabaseClient
+                    .from('user_role')
+                    .select(`
+                        id,
+                        wilayah(kode, nama)
+                    `)
+                    .eq('user_id', user.id)
+                    .eq('is_aktif', true)
+                    .eq('wilayah.kode', kodeWilayah)
+                    .single();
+                
+                if (roleError || !userRole) {
+                    alert('Anda tidak memiliki akses ke kelompok ini. Hubungi admin.');
+                    loading.classList.remove('active');
+                    return;
+                }
+                
+                // Save selected kelompok to localStorage
+                localStorage.setItem('dev_selected_kelompok', kodeWilayah);
+                localStorage.setItem('dev_selected_kelompok_nama', namaKelompok);
+                localStorage.setItem('dev_role_selected', 'true');
+                
+                // Redirect to quick testing
+                window.location.href = 'quick-testing.html';
+                
+            } catch (error) {
+                loading.classList.remove('active');
+                alert('Error: ' + error.message);
+                console.error('Error:', error);
+            }
+        }
+        
+        // Logout function
+        async function doLogout() {
+            if (!confirm('Logout dari aplikasi?')) return;
+            
+            await supabaseClient.auth.signOut();
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+        
+        // Admin login (redirect to regular login page)
+        function showAdminLogin() {
+            window.location.href = 'login.html';
+        }
+        
+        // Check authentication and show user info
+        async function checkAuth() {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            
+            if (!user) {
+                // Not logged in, redirect to login
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            // Show user email in header
+            const userDisplay = document.getElementById('userEmailDisplay');
+            userDisplay.textContent = '👤 ' + (user.email || 'User');
+            
+            // Clear previous role selection (force user to choose every time)
+            localStorage.removeItem('dev_role_selected');
+            
+            console.log('Logged in as:', user.email);
+            console.log('Please select a kelompok to continue');
+        }
+        
+        // Init
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            renderKelompok();
+        });
+    </script>
+</body>
+</html>
