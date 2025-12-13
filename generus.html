@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Generus - PPG Sorong</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">PPG</div>
+                <div class="sidebar-brand">
+                    <div class="sidebar-title">PPG Sorong</div>
+                    <div class="sidebar-subtitle">Pembinaan Generasi Penerus</div>
+                </div>
+                <button class="sidebar-close" onclick="toggleSidebar()">✕</button>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section">MENU UTAMA</div>
+                <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">Dashboard</span></a>
+                <a href="generus.html" class="nav-item active"><span class="nav-icon">👶</span><span class="nav-text">Data Generus</span></a>
+                <a href="pengajian.html" class="nav-item"><span class="nav-icon">📖</span><span class="nav-text">Pengajian</span></a>
+                <a href="presensi.html" class="nav-item"><span class="nav-icon">✅</span><span class="nav-text">Presensi</span></a>
+                <a href="progress.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-text">Progress Hafalan</span></a>
+                <div class="nav-section">LAPORAN</div>
+                <a href="rapor.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-text">Rapor</span></a>
+                <div class="nav-section">PENGATURAN</div>
+                <a href="wilayah.html" class="nav-item"><span class="nav-icon">🗺️</span><span class="nav-text">Wilayah</span></a>
+                <a href="kurikulum.html" class="nav-item"><span class="nav-icon">📚</span><span class="nav-text">Kurikulum</span></a>
+                <a href="jamaah.html" class="nav-item"><span class="nav-icon">👥</span><span class="nav-text">Data Jamaah</span></a>
+                <a href="users.html" class="nav-item"><span class="nav-icon">👤</span><span class="nav-text">Manajemen User</span></a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="sidebar-user-avatar" id="sidebarUserAvatar">?</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" id="sidebarUserName">Loading...</div>
+                        <div class="sidebar-user-role" id="sidebarUserRole">-</div>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline w-100" onclick="logout()">🚪 Keluar</button>
+            </div>
+        </aside>
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <div class="header-left">
+                    <button class="btn-menu" onclick="toggleSidebar()"><span class="menu-icon">☰</span></button>
+                    <h1 class="header-title">Data Generus</h1>
+                </div>
+                <div class="header-right">
+                    <div class="user-menu">
+                        <div class="user-avatar" id="userAvatar">?</div>
+                        <div class="user-info">
+                            <div class="user-name" id="userName">Loading...</div>
+                            <div class="user-role" id="userRole">-</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="logout()">Keluar</button>
+                </div>
+            </header>
+            
+            <div class="page-content">
+                <div class="page-header">
+                    <div>
+                        <div class="breadcrumb"><a href="dashboard.html">Dashboard</a><span>/</span><span>Data Generus</span></div>
+                        <h2 class="page-title">Daftar Generus</h2>
+                        <p class="text-muted">Generasi Penerus - Jamaah yang belum menikah</p>
+                    </div>
+                </div>
+                
+                <!-- Filters -->
+                <div class="card mb-lg">
+                    <div class="card-body">
+                        <div class="filter-grid">
+                            <div class="form-group mb-0">
+                                <input type="text" class="form-control" id="searchInput" placeholder="🔍 Cari nama..." oninput="debounceSearch()">
+                            </div>
+                            <div class="form-group mb-0">
+                                <label class="form-label-sm">Daerah</label>
+                                <select class="form-control" id="filterDaerah" onchange="onDaerahChange()">
+                                    <option value="">Semua Daerah</option>
+                                </select>
+                            </div>
+                            <div class="form-group mb-0">
+                                <label class="form-label-sm">Kelompok</label>
+                                <select class="form-control" id="filterKelompok" onchange="loadGenerus()">
+                                    <option value="">Semua Kelompok</option>
+                                </select>
+                            </div>
+                            <div class="form-group mb-0">
+                                <label class="form-label-sm">Jenjang</label>
+                                <select class="form-control" id="filterJenjang" onchange="loadGenerus()">
+                                    <option value="">Semua Jenjang</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-md">
+                            <small class="text-muted" id="infoTotal">Total: 0 generus</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Table -->
+                <div class="card">
+                    <div class="table-responsive">
+                        <table class="table" id="generusTable">
+                            <thead>
+                                <tr>
+                                    <th width="50">NO</th>
+                                    <th>NAMA</th>
+                                    <th width="60">L/P</th>
+                                    <th width="70">UMUR</th>
+                                    <th width="100">JENJANG</th>
+                                    <th>KELOMPOK</th>
+                                    <th width="80">STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="7" class="text-center text-muted py-4">Memuat data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/sidebar.js"></script>
+    
+    <script>
+        let userWilayahId = null;
+        
+        const debounceSearch = debounce(() => loadGenerus(), 300);
+        
+        function toggleSidebar() {
+            const sidebar = $('sidebar');
+            const overlay = $('sidebarOverlay');
+            if (sidebar) sidebar.classList.toggle('collapsed');
+            if (overlay) overlay.classList.toggle('show');
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!await requireAuth()) return;
+            updateSidebarUserInfo();
+            initSidebar();
+            updateUserUI();
+            
+            // Get wilayah dari role user
+            const userRoleWithWilayah = userRoles.find(r => r.wilayah_id || r.wilayah);
+            if (userRoleWithWilayah) {
+                userWilayahId = userRoleWithWilayah.wilayah_id;
+            }
+            
+            await loadFilters();
+            await loadGenerus();
+        });
+        
+        function updateUserUI() {
+            if (currentUserData) {
+                $('userName').textContent = currentUserData.nama || currentUserData.email;
+                $('userAvatar').textContent = (currentUserData.nama || 'U').charAt(0).toUpperCase();
+                if (userRoles.length > 0) $('userRole').textContent = userRoles[0].role?.nama || '-';
+            }
+        }
+        
+        async function loadFilters() {
+            try {
+                // Load daerah
+                const { data: daerahList } = await db.from('wilayah')
+                    .select('id, nama')
+                    .eq('tingkat', 'daerah')
+                    .eq('is_aktif', true)
+                    .order('nama');
+                
+                if (daerahList) {
+                    $('filterDaerah').innerHTML = '<option value="">Semua Daerah</option>' +
+                        daerahList.map(d => `<option value="${d.id}">${d.nama}</option>`).join('');
+                }
+                
+                // Load jenjang (exclude Dewasa untuk generus)
+                const { data: jenjangList } = await db.from('jenjang')
+                    .select('id, nama')
+                    .eq('is_aktif', true)
+                    .neq('nama', 'Dewasa')
+                    .order('urutan');
+                
+                if (jenjangList) {
+                    $('filterJenjang').innerHTML = '<option value="">Semua Jenjang</option>' +
+                        jenjangList.map(j => `<option value="${j.id}">${j.nama}</option>`).join('');
+                }
+                
+            } catch (error) {
+                console.error('Error loading filters:', error);
+            }
+        }
+        
+        async function onDaerahChange() {
+            const daerahId = $('filterDaerah').value;
+            $('filterKelompok').innerHTML = '<option value="">Semua Kelompok</option>';
+            
+            if (daerahId) {
+                // Load desa dalam daerah
+                const { data: desaList } = await db.from('wilayah')
+                    .select('id, nama')
+                    .eq('parent_id', daerahId)
+                    .eq('is_aktif', true)
+                    .order('nama');
+                
+                if (desaList && desaList.length > 0) {
+                    // Load kelompok dalam semua desa
+                    const desaIds = desaList.map(d => d.id);
+                    const { data: kelompokList } = await db.from('wilayah')
+                        .select('id, nama, parent_id')
+                        .in('parent_id', desaIds)
+                        .eq('is_aktif', true)
+                        .order('nama');
+                    
+                    if (kelompokList) {
+                        $('filterKelompok').innerHTML = '<option value="">Semua Kelompok</option>' +
+                            kelompokList.map(k => {
+                                const desa = desaList.find(d => d.id === k.parent_id);
+                                return `<option value="${k.id}">${k.nama} (${desa?.nama || ''})</option>`;
+                            }).join('');
+                    }
+                }
+            }
+            
+            loadGenerus();
+        }
+        
+        async function loadGenerus() {
+            try {
+                const search = $('searchInput').value.toLowerCase();
+                const daerahId = $('filterDaerah').value;
+                const kelompokId = $('filterKelompok').value;
+                const jenjangId = $('filterJenjang').value;
+                
+                // Tentukan wilayah_id untuk query
+                let wilayahId = null;
+                if (kelompokId) {
+                    wilayahId = parseInt(kelompokId);
+                } else if (daerahId) {
+                    wilayahId = parseInt(daerahId);
+                } else if (userWilayahId) {
+                    wilayahId = userWilayahId;
+                }
+                
+                // Panggil RPC function
+                const { data, error } = await db.rpc('get_generus_by_wilayah', {
+                    p_wilayah_id: wilayahId,
+                    p_jenjang_id: jenjangId ? parseInt(jenjangId) : null,
+                    p_status: 'aktif'
+                });
+                
+                if (error) throw error;
+                
+                // Filter by search (client-side)
+                let filtered = data || [];
+                if (search) {
+                    filtered = filtered.filter(g => 
+                        g.nama.toLowerCase().includes(search) ||
+                        (g.nama_panggilan && g.nama_panggilan.toLowerCase().includes(search))
+                    );
+                }
+                
+                $('infoTotal').textContent = `Total: ${filtered.length} generus`;
+                renderTable(filtered);
+                
+            } catch (error) {
+                console.error('Error loading generus:', error);
+                showToast('Gagal memuat data generus: ' + (error.message || error), 'error');
+            }
+        }
+        
+        function renderTable(data) {
+            const tbody = $$('#generusTable tbody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Tidak ada data</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = data.map((g, i) => {
+                const statusBadge = g.status === 'aktif' 
+                    ? '<span class="badge badge-success">Aktif</span>'
+                    : '<span class="badge badge-secondary">' + (g.status || '-') + '</span>';
+                
+                return `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>
+                        <strong>${g.nama}</strong>
+                        ${g.nama_panggilan ? `<br><small class="text-muted">${g.nama_panggilan}</small>` : ''}
+                    </td>
+                    <td>${g.jenis_kelamin || '-'}</td>
+                    <td>${g.tanggal_lahir ? hitungUmur(g.tanggal_lahir) + ' th' : '-'}</td>
+                    <td><span class="badge badge-info">${g.jenjang_nama || '-'}</span></td>
+                    <td>${g.kelompok_nama || '-'}</td>
+                    <td>${statusBadge}</td>
+                </tr>`;
+            }).join('');
+        }
+        
+        function hitungUmur(tanggalLahir) {
+            const today = new Date();
+            const birth = new Date(tanggalLahir);
+            let age = today.getFullYear() - birth.getFullYear();
+            const m = today.getMonth() - birth.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            return age;
+        }
+    </script>
+</body>
+</html>

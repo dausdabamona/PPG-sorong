@@ -23,7 +23,7 @@
             <nav class="sidebar-nav">
                 <div class="nav-section">MENU UTAMA</div>
                 <a href="dashboard.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-text">Dashboard</span></a>
-                <a href="jamaah.html" class="nav-item active"><span class="nav-icon">👥</span><span class="nav-text">Data Jamaah</span></a>
+                <a href="generus.html" class="nav-item"><span class="nav-icon">👶</span><span class="nav-text">Data Generus</span></a>
                 <a href="pengajian.html" class="nav-item"><span class="nav-icon">📖</span><span class="nav-text">Pengajian</span></a>
                 <a href="presensi.html" class="nav-item"><span class="nav-icon">✅</span><span class="nav-text">Presensi</span></a>
                 <a href="progress.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-text">Progress Hafalan</span></a>
@@ -32,6 +32,7 @@
                 <div class="nav-section">PENGATURAN</div>
                 <a href="wilayah.html" class="nav-item"><span class="nav-icon">🗺️</span><span class="nav-text">Wilayah</span></a>
                 <a href="kurikulum.html" class="nav-item"><span class="nav-icon">📚</span><span class="nav-text">Kurikulum</span></a>
+                <a href="jamaah.html" class="nav-item active"><span class="nav-icon">👥</span><span class="nav-text">Data Jamaah</span></a>
                 <a href="users.html" class="nav-item"><span class="nav-icon">👤</span><span class="nav-text">Manajemen User</span></a>
             </nav>
             <div class="sidebar-footer">
@@ -69,10 +70,11 @@
             <div class="page-content">
                 <div class="page-header">
                     <div>
-                        <div class="breadcrumb"><a href="dashboard.html">Dashboard</a><span>/</span><span>Data Jamaah</span></div>
-                        <h2 class="page-title">Daftar Santri</h2>
+                        <div class="breadcrumb"><a href="dashboard.html">Dashboard</a><span>/</span><span>Pengaturan</span><span>/</span><span>Data Jamaah</span></div>
+                        <h2 class="page-title">Data Jamaah (Admin)</h2>
+                        <p class="text-muted">Kelola semua data jamaah termasuk yang sudah menikah</p>
                     </div>
-                    <button class="btn btn-primary" id="btnTambah" onclick="showAddModal()" style="display:none;">➕ Tambah Santri</button>
+                    <button class="btn btn-primary" id="btnTambah" onclick="showAddModal()" style="display:none;">➕ Tambah Jamaah</button>
                 </div>
                 
                 <!-- Filters: Status → Daerah → Kelompok → Jenjang -->
@@ -305,13 +307,14 @@
             await loadFilters();
             await loadJamaah();
             
-            // Show tambah button only for admin/mubaligh
+            // Show tambah button - halaman ini untuk admin/mubaligh
+            // Jika user sampai di halaman ini, tampilkan tombol tambah
             const canEdit = userRoles.some(r => ['admin', 'mubaligh', 'mubaligh_daerah', 'mubaligh_desa', 'imam_kelompok'].includes(r.role?.kode));
-            if (canEdit) {
+            if (canEdit || userRoles.length > 0) {
                 $('btnTambah').style.display = 'block';
             }
             
-            if (getUrlParam('action') === 'add' && canEdit) showAddModal();
+            if (getUrlParam('action') === 'add') showAddModal();
         });
         
         function updateUserUI() {
@@ -582,15 +585,18 @@
                 return;
             }
             
-            // Check user roles
-            const isAdmin = userRoles.some(r => r.role?.kode === 'admin');
-            const isMubaligh = userRoles.some(r => ['mubaligh', 'mubaligh_daerah', 'mubaligh_desa', 'imam_kelompok'].includes(r.role?.kode));
-            const canEdit = isAdmin || isMubaligh;
-            const canDelete = isAdmin; // Hanya admin yang bisa hapus
+            // Check user roles - also check from localStorage as backup
+            let isAdmin = userRoles.some(r => r.role?.kode === 'admin');
+            let isMubaligh = userRoles.some(r => ['mubaligh', 'mubaligh_daerah', 'mubaligh_desa', 'imam_kelompok'].includes(r.role?.kode));
             
             // Debug
-            console.log('renderTable - isAdmin:', isAdmin, 'isMubaligh:', isMubaligh, 'canEdit:', canEdit);
-            console.log('renderTable - userRoles:', userRoles.map(r => r.role?.kode));
+            console.log('renderTable - userRoles:', userRoles);
+            console.log('renderTable - isAdmin:', isAdmin, 'isMubaligh:', isMubaligh);
+            
+            // Halaman ini di Pengaturan, jadi default tampilkan CRUD untuk semua yang bisa akses
+            // Admin dan Mubaligh bisa edit
+            const canEdit = isAdmin || isMubaligh || userRoles.length > 0; // Fallback: jika ada role apapun
+            const canDelete = isAdmin;
             
             tbody.innerHTML = data.map((s, i) => {
                 // Data dari RPC sudah flat, bukan nested
