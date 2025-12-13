@@ -274,6 +274,23 @@
             // Debug: tampilkan userRoles
             console.log('userRoles:', JSON.stringify(userRoles, null, 2));
             
+            // Fallback: jika userRoles kosong, coba load ulang
+            if (userRoles.length === 0 && currentUserData?.id) {
+                console.log('userRoles kosong, mencoba load ulang...');
+                const { data: rolesData, error } = await db
+                    .from('user_role')
+                    .select('*, role:role_id(kode, nama, level), wilayah:wilayah_id(id, nama, tingkat)')
+                    .eq('user_id', currentUserData.id)
+                    .eq('is_aktif', true);
+                
+                if (!error && rolesData) {
+                    userRoles = rolesData;
+                    console.log('userRoles reloaded:', JSON.stringify(userRoles, null, 2));
+                } else {
+                    console.error('Gagal reload userRoles:', error);
+                }
+            }
+            
             // Get wilayah dari role user
             // Format dari query: { wilayah_id: 22, wilayah: { id: 22, nama: 'Klasaman', ... }, role: {...} }
             const userRoleWithWilayah = userRoles.find(r => r.wilayah_id || r.wilayah);
@@ -570,6 +587,10 @@
             const isMubaligh = userRoles.some(r => ['mubaligh', 'mubaligh_daerah', 'mubaligh_desa', 'imam_kelompok'].includes(r.role?.kode));
             const canEdit = isAdmin || isMubaligh;
             const canDelete = isAdmin; // Hanya admin yang bisa hapus
+            
+            // Debug
+            console.log('renderTable - isAdmin:', isAdmin, 'isMubaligh:', isMubaligh, 'canEdit:', canEdit);
+            console.log('renderTable - userRoles:', userRoles.map(r => r.role?.kode));
             
             tbody.innerHTML = data.map((s, i) => {
                 // Data dari RPC sudah flat, bukan nested
