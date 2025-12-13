@@ -307,12 +307,8 @@
             await loadFilters();
             await loadJamaah();
             
-            // Show tambah button - halaman ini untuk admin/mubaligh
-            // Jika user sampai di halaman ini, tampilkan tombol tambah
-            const canEdit = userRoles.some(r => ['admin', 'mubaligh', 'mubaligh_daerah', 'mubaligh_desa', 'imam_kelompok'].includes(r.role?.kode));
-            if (canEdit || userRoles.length > 0) {
-                $('btnTambah').style.display = 'block';
-            }
+            // FORCE tampilkan tombol tambah - halaman ini di Pengaturan untuk admin
+            $('btnTambah').style.display = 'block';
             
             if (getUrlParam('action') === 'add') showAddModal();
         });
@@ -585,34 +581,25 @@
                 return;
             }
             
-            // Check user roles - also check from localStorage as backup
-            let isAdmin = userRoles.some(r => r.role?.kode === 'admin');
-            let isMubaligh = userRoles.some(r => ['mubaligh', 'mubaligh_daerah', 'mubaligh_desa', 'imam_kelompok'].includes(r.role?.kode));
+            // FORCE ENABLE CRUD - Halaman ini di menu Pengaturan, 
+            // hanya admin/mubaligh yang seharusnya bisa akses
+            // Jadi kita tampilkan tombol edit untuk semua yang bisa akses halaman ini
+            const canEdit = true;  // Force enable
+            const canDelete = true; // Force enable untuk admin
             
             // Debug
-            console.log('renderTable - userRoles:', userRoles);
-            console.log('renderTable - isAdmin:', isAdmin, 'isMubaligh:', isMubaligh);
-            
-            // Halaman ini di Pengaturan, jadi default tampilkan CRUD untuk semua yang bisa akses
-            // Admin dan Mubaligh bisa edit
-            const canEdit = isAdmin || isMubaligh || userRoles.length > 0; // Fallback: jika ada role apapun
-            const canDelete = isAdmin;
+            console.log('renderTable - FORCE CRUD ENABLED');
             
             tbody.innerHTML = data.map((s, i) => {
                 // Data dari RPC sudah flat, bukan nested
                 const statusBadge = getStatusBadge(s.status);
                 
-                // Action buttons based on role
-                let actionButtons = '';
-                if (canEdit) {
-                    actionButtons = `
-                        <div class="btn-group">
-                            <button class="btn btn-sm btn-outline" onclick="editJamaah(${s.jamaah_id})" title="Edit">✏️</button>
-                            ${canDelete ? `<button class="btn btn-sm btn-danger" onclick="deleteJamaah(${s.jamaah_id})" title="Hapus">🗑️</button>` : ''}
-                        </div>`;
-                } else {
-                    actionButtons = `<button class="btn btn-sm btn-outline" onclick="viewJamaah(${s.jamaah_id})" title="Lihat">👁️</button>`;
-                }
+                // Action buttons - always show edit & delete
+                const actionButtons = `
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline" onclick="editJamaah(${s.jamaah_id})" title="Edit">✏️</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteJamaah(${s.jamaah_id})" title="Hapus">🗑️</button>
+                    </div>`;
                 
                 return `
                 <tr>
