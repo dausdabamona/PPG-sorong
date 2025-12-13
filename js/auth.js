@@ -182,18 +182,18 @@ async function loadUserData() {
 
 // Cek apakah user punya role tertentu
 function hasRole(roleKode) {
-    return userRoles.some(ur => ur.role?.kode === roleKode);
+    return userRoles.some(ur => ur.role?.kode?.toLowerCase() === roleKode.toLowerCase());
 }
 
 // Cek apakah admin
 function isAdmin() {
-    return hasRole('admin');
+    return userRoles.some(ur => ur.role?.kode?.toLowerCase() === 'admin');
 }
 
 // Cek apakah mubaligh/pengajar
 function isMubaligh() {
-    return hasRole('mubaligh') || hasRole('imam_kelompok') || 
-           hasRole('wakil_kelompok') || hasRole('pakar_pendidik');
+    const mubalighRoles = ['mubaligh', 'mubaligh_daerah', 'mubaligh_desa', 'imam_kelompok', 'wakil_kelompok', 'pakar_pendidik'];
+    return userRoles.some(ur => mubalighRoles.includes(ur.role?.kode?.toLowerCase()));
 }
 
 // Cek apakah orang tua
