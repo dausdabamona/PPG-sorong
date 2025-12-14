@@ -300,6 +300,17 @@
                 }
             }
             
+            // Cek apakah user adalah admin
+            const isUserAdmin = userRoles.some(r => r.role?.kode?.toLowerCase() === 'admin');
+            if (!isUserAdmin) {
+                // Bukan admin, redirect ke halaman generus
+                showToast('Halaman ini hanya untuk Admin. Silakan gunakan halaman Data Generus.', 'warning');
+                setTimeout(() => {
+                    window.location.href = 'generus.html';
+                }, 2000);
+                return;
+            }
+            
             // Get wilayah dari role user
             // Format dari query: { wilayah_id: 22, wilayah: { id: 22, nama: 'Klasaman', ... }, role: {...} }
             const userRoleWithWilayah = userRoles.find(r => r.wilayah_id || r.wilayah);
@@ -314,7 +325,7 @@
             await loadFilters();
             await loadJamaah();
             
-            // FORCE tampilkan tombol tambah - halaman ini di Pengaturan untuk admin
+            // Tampilkan tombol tambah untuk admin
             $('btnTambah').style.display = 'block';
             
             if (getUrlParam('action') === 'add') showAddModal();

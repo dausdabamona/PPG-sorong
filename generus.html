@@ -128,13 +128,74 @@
                                     <th width="100">JENJANG</th>
                                     <th>KELOMPOK</th>
                                     <th width="80">STATUS</th>
+                                    <th width="80" id="colAksi" style="display:none;">AKSI</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr><td colspan="7" class="text-center text-muted py-4">Memuat data...</td></tr>
+                                <tr><td colspan="8" class="text-center text-muted py-4">Memuat data...</td></tr>
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Modal Edit Generus -->
+            <div class="modal" id="editModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">Edit Data Generus</h3>
+                        <button class="modal-close" onclick="closeEditModal()">&times;</button>
+                    </div>
+                    <form id="editForm" onsubmit="saveGenerus(event)">
+                        <div class="modal-body">
+                            <input type="hidden" name="id" id="editId">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Nama Lengkap *</label>
+                                    <input type="text" class="form-control" name="nama" id="editNama" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Nama Panggilan</label>
+                                    <input type="text" class="form-control" name="nama_panggilan" id="editNamaPanggilan">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Jenis Kelamin *</label>
+                                    <select class="form-control" name="jenis_kelamin" id="editJenisKelamin" required>
+                                        <option value="">Pilih</option>
+                                        <option value="L">Laki-laki</option>
+                                        <option value="P">Perempuan</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tanggal Lahir</label>
+                                    <input type="date" class="form-control" name="tanggal_lahir" id="editTanggalLahir">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">No. HP</label>
+                                    <input type="text" class="form-control" name="phone" id="editPhone">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Status</label>
+                                    <select class="form-control" name="status_aktif" id="editStatus">
+                                        <option value="aktif">Aktif</option>
+                                        <option value="nonaktif">Nonaktif</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Alamat</label>
+                                <textarea class="form-control" name="alamat_lengkap" id="editAlamat" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline" onclick="closeEditModal()">Batal</button>
+                            <button type="submit" class="btn btn-primary">💾 Simpan</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </main>
@@ -294,14 +355,27 @@
         function renderTable(data) {
             const tbody = $$('#generusTable tbody');
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Tidak ada data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data</td></tr>';
                 return;
             }
+            
+            // Check if user can edit (admin or mubaligh)
+            const canEdit = userRoles.some(r => 
+                ['admin', 'mubaligh', 'mubaligh_daerah', 'mubaligh_desa', 'imam_kelompok'].includes(r.role?.kode?.toLowerCase())
+            );
+            
+            // Show/hide AKSI column
+            const colAksi = $('colAksi');
+            if (colAksi) colAksi.style.display = canEdit ? '' : 'none';
             
             tbody.innerHTML = data.map((g, i) => {
                 const statusBadge = g.status === 'aktif' 
                     ? '<span class="badge badge-success">Aktif</span>'
                     : '<span class="badge badge-secondary">' + (g.status || '-') + '</span>';
+                
+                const actionBtn = canEdit 
+                    ? `<td><button class="btn btn-sm btn-outline" onclick="editGenerus(${g.jamaah_id})" title="Edit">✏️</button></td>`
+                    : '';
                 
                 return `
                 <tr>
@@ -315,8 +389,73 @@
                     <td><span class="badge badge-info">${g.jenjang_nama || '-'}</span></td>
                     <td>${g.kelompok_nama || '-'}</td>
                     <td>${statusBadge}</td>
+                    ${actionBtn}
                 </tr>`;
             }).join('');
+        }
+        
+        // Edit generus
+        async function editGenerus(id) {
+            try {
+                const { data: generus, error } = await db
+                    .from('jamaah')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                if (error) throw error;
+                
+                // Fill form
+                $('editId').value = generus.id;
+                $('editNama').value = generus.nama || '';
+                $('editNamaPanggilan').value = generus.nama_panggilan || '';
+                $('editJenisKelamin').value = generus.jenis_kelamin || '';
+                $('editTanggalLahir').value = generus.tanggal_lahir || '';
+                $('editPhone').value = generus.phone || '';
+                $('editStatus').value = generus.status_aktif || 'aktif';
+                $('editAlamat').value = generus.alamat_lengkap || '';
+                
+                // Show modal
+                $('editModal').classList.add('show');
+            } catch (error) {
+                console.error('Error loading generus:', error);
+                showToast('Gagal memuat data: ' + error.message, 'error');
+            }
+        }
+        
+        function closeEditModal() {
+            $('editModal').classList.remove('show');
+        }
+        
+        async function saveGenerus(e) {
+            e.preventDefault();
+            
+            const id = $('editId').value;
+            const data = {
+                nama: $('editNama').value,
+                nama_panggilan: $('editNamaPanggilan').value || null,
+                jenis_kelamin: $('editJenisKelamin').value,
+                tanggal_lahir: $('editTanggalLahir').value || null,
+                phone: $('editPhone').value || null,
+                status_aktif: $('editStatus').value,
+                alamat_lengkap: $('editAlamat').value || null
+            };
+            
+            try {
+                const { error } = await db
+                    .from('jamaah')
+                    .update(data)
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showToast('Data berhasil disimpan!', 'success');
+                closeEditModal();
+                loadGenerus();
+            } catch (error) {
+                console.error('Error saving:', error);
+                showToast('Gagal menyimpan: ' + error.message, 'error');
+            }
         }
         
         function hitungUmur(tanggalLahir) {
